@@ -1,0 +1,107 @@
+name: 'Extended Monitoring'
+description: 'Monitor application health over an extended period with failure tracking'
+inputs:
+  url:
+    description: 'Base URL of the application to monitor'
+    required: true
+  duration_minutes:
+    description: 'Duration to monitor in minutes'
+    required: false
+    default: '5'
+  check_interval_seconds:
+    description: 'Interval between health checks in seconds'
+    required: false
+    default: '30'
+  max_consecutive_failures:
+    description: 'Maximum consecutive failures before alerting'
+    required: false
+    default: '3'
+  endpoint:
+    description: 'Health check endpoint path'
+    required: false
+    default: '/health'
+
+outputs:
+  status:
+    description: 'Monitoring status (success/failure)'
+    value: ${{ steps.monitor.outputs.status }}
+  total_checks:
+    description: 'Total number of health checks performed'
+    value: ${{ steps.monitor.outputs.total_checks }}
+  failures:
+    description: 'Number of failed checks'
+    value: ${{ steps.monitor.outputs.failures }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Extended monitoring
+      id: monitor
+      shell: bash
+      run: |
+        FULL_URL="${{ inputs.url }}${{ inputs.endpoint }}"
+        DURATION_MINUTES=${{ inputs.duration_minutes }}
+        INTERVAL_SECONDS=${{ inputs.check_interval_seconds }}
+        MAX_FAILURES=${{ inputs.max_consecutive_failures }}
+
+        # Calculate number of checks
+        TOTAL_CHECKS=$((DURATION_MINUTES * 60 / INTERVAL_SECONDS))
+
+        echo "========================================="
+        echo "Extended Monitoring"
+        echo "========================================="
+        echo "URL:             $FULL_URL"
+        echo "Duration:        ${DURATION_MINUTES} minutes"
+        echo "Check Interval:  ${INTERVAL_SECONDS} seconds"
+        echo "Total Checks:    ${TOTAL_CHECKS}"
+        echo "Max Failures:    ${MAX_FAILURES} consecutive"
+        echo "========================================="
+        echo ""
+
+        consecutive_failures=0
+        total_failures=0
+
+        for i in $(seq 1 $TOTAL_CHECKS); do
+          echo "Health check $i/$TOTAL_CHECKS ($(date))..."
+
+          response=$(curl -s -w "\n%{http_code}" "$FULL_URL" || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+
+          if [ "$http_code" != "200" ]; then
+            echo "WARNING: Health check failed with status: $http_code"
+            consecutive_failures=$((consecutive_failures + 1))
+            total_failures=$((total_failures + 1))
+
+            if [ $consecutive_failures -ge $MAX_FAILURES ]; then
+              echo ""
+              echo "========================================="
+              echo "ERROR: $MAX_FAILURES consecutive failures detected!"
+              echo "========================================="
+              echo "status=failure" >> $GITHUB_OUTPUT
+              echo "total_checks=$i" >> $GITHUB_OUTPUT
+              echo "failures=$total_failures" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          else
+            echo "Status: OK"
+            consecutive_failures=0
+          fi
+
+          # Don't sleep after the last check
+          if [ $i -lt $TOTAL_CHECKS ]; then
+            sleep $INTERVAL_SECONDS
+          fi
+        done
+
+        echo ""
+        echo "========================================="
+        echo "Monitoring Complete - Application Stable!"
+        echo "========================================="
+        echo "Total Checks:    $TOTAL_CHECKS"
+        echo "Total Failures:  $total_failures"
+        echo "Success Rate:    $(( (TOTAL_CHECKS - total_failures) * 100 / TOTAL_CHECKS ))%"
+        echo "========================================="
+
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "total_checks=$TOTAL_CHECKS" >> $GITHUB_OUTPUT
+        echo "failures=$total_failures" >> $GITHUB_OUTPUT

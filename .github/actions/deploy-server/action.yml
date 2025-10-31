@@ -1,0 +1,139 @@
+name: 'Deploy to Server'
+description: 'Deploy Docker container to remote server via SSH'
+inputs:
+  ssh_host:
+    description: 'SSH host address'
+    required: true
+  ssh_user:
+    description: 'SSH username'
+    required: true
+  ssh_key:
+    description: 'SSH private key'
+    required: true
+  ssh_port:
+    description: 'SSH port'
+    required: false
+    default: '22'
+  registry:
+    description: 'Container registry URL'
+    required: true
+  image_name:
+    description: 'Docker image name'
+    required: true
+  version:
+    description: 'Version tag to deploy'
+    required: true
+  container_name:
+    description: 'Name for the container'
+    required: true
+  port:
+    description: 'Port mapping (host:container)'
+    required: false
+    default: '8080:8080'
+  github_token:
+    description: 'GitHub token for registry authentication'
+    required: true
+  deploy_path:
+    description: 'Deployment directory on server'
+    required: false
+    default: '/opt/todos-app'
+
+outputs:
+  deployed_version:
+    description: 'The version that was deployed'
+    value: ${{ inputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Display deployment info
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "Deploying to Server"
+        echo "========================================="
+        echo "Host: ${{ inputs.ssh_host }}"
+        echo "User: ${{ inputs.ssh_user }}"
+        echo "Container: ${{ inputs.container_name }}"
+        echo "Image: ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}"
+        echo "Port: ${{ inputs.port }}"
+        echo "========================================="
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      env:
+        IMAGE_TAG: ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}
+        VERSION: ${{ inputs.version }}
+        CONTAINER_NAME: ${{ inputs.container_name }}
+        PORT_MAPPING: ${{ inputs.port }}
+        DEPLOY_PATH: ${{ inputs.deploy_path }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        REGISTRY: ${{ inputs.registry }}
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
+        script: |
+          # Navigate to deployment directory
+          cd $DEPLOY_PATH || mkdir -p $DEPLOY_PATH && cd $DEPLOY_PATH
+
+          # Login to GitHub Container Registry
+          echo "$GITHUB_TOKEN" | docker login $REGISTRY -u $GITHUB_ACTOR --password-stdin
+
+          # Pull latest image
+          echo "Pulling image: $IMAGE_TAG"
+          docker pull $IMAGE_TAG
+
+          # Backup current container
+          if docker ps -a | grep -q "$CONTAINER_NAME"; then
+            echo "Backing up current container..."
+            docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous || true
+            docker stop ${CONTAINER_NAME}-previous || true
+          fi
+
+          # Backup database if exists
+          if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
+            BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
+            cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
+            echo "Database backed up to: $BACKUP_FILE"
+
+            # Keep only last 10 backups
+            ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+          fi
+
+          # Start new container
+          echo "Starting new container: $CONTAINER_NAME"
+          docker run -d \
+            --name $CONTAINER_NAME \
+            --restart unless-stopped \
+            -p $PORT_MAPPING \
+            -v $DEPLOY_PATH/data:/app/data \
+            -e HOSTNAME=0.0.0.0 \
+            -e PORT=8080 \
+            $IMAGE_TAG
+
+          # Wait for container to start
+          sleep 10
+
+          # Store deployment metadata
+          echo "$VERSION" > $DEPLOY_PATH/current-version.txt
+          echo "$(date -Iseconds)" > $DEPLOY_PATH/last-deployment.txt
+
+          # Clean up old images
+          docker image prune -f
+
+          echo "Deployment complete!"
+
+    - name: Deployment summary
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "✅ Deployment Complete"
+        echo "========================================="
+        echo "Container: ${{ inputs.container_name }}"
+        echo "Version: ${{ inputs.version }}"
+        echo "Server: ${{ inputs.ssh_host }}"
+        echo "========================================="

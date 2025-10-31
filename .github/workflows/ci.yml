@@ -1,0 +1,209 @@
+name: CI - Test and Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  SWIFT_VERSION: '5.9'
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SwiftLint
+        uses: ./.github/actions/setup-swiftlint
+        with:
+          version: '0.54.0'
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            todos-fluent/.build
+            todos-fluent/.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build application
+        working-directory: todos-fluent
+        run: swift build --build-tests
+
+      - name: Run tests
+        working-directory: todos-fluent
+        run: swift test --enable-code-coverage
+
+      - name: Generate code coverage
+        if: success()
+        working-directory: todos-fluent
+        run: |
+          swift test --enable-code-coverage
+          xcrun llvm-cov export -format="lcov" \
+            .build/debug/AppPackageTests.xctest \
+            -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
+
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./todos-fluent/coverage.lcov
+          fail_ci_if_error: false
+
+  version-increment:
+    name: Increment Build Number
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, test]
+    outputs:
+      version: ${{ steps.increment.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        uses: ./.github/actions/git-config
+
+      - name: Increment build number
+        id: increment
+        uses: ./.github/actions/version-increment
+        with:
+          version_type: 'build'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit version file
+        run: |
+          git add VERSION
+          git commit -m "chore: increment build number to ${{ steps.increment.outputs.version }} [skip ci]"
+          git push
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint, test, version-increment]
+    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Get version
+        id: version
+        uses: ./.github/actions/read-version
+
+      - name: Build and push Docker image
+        uses: ./.github/actions/docker-build-push
+        with:
+          registry: 'ghcr.io'
+          image_name: ${{ github.repository }}
+          version: ${{ steps.version.outputs.version }}
+          tags: 'latest'
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate cache keys
+        id: cache-keys
+        run: |
+          # Generate hash of Package.resolved for dependency caching
+          DEPS_HASH=$(sha256sum todos-fluent/Package.resolved | cut -d' ' -f1 | cut -c1-12)
+          echo "deps-hash=${DEPS_HASH}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: hummingbird-todos:test
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository }}:builder-cache-${{ steps.cache-keys.outputs.deps-hash }}
+            type=registry,ref=ghcr.io/${{ github.repository }}:builder-cache-latest
+            type=gha
+
+      - name: Start application container
+        run: |
+          docker run -d \
+            --name todos-test \
+            -p 8080:8080 \
+            -e HOSTNAME=0.0.0.0 \
+            -e PORT=8080 \
+            hummingbird-todos:test
+
+          # Wait for container to be healthy
+          timeout 60 bash -c 'until docker exec todos-test curl -f http://localhost:8080/health 2>/dev/null; do sleep 2; done'
+
+      - name: Run API integration tests
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: 'http://localhost:8080'
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs todos-test
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f todos-test || true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

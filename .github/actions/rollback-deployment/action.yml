@@ -1,0 +1,82 @@
+name: 'Rollback Deployment'
+description: 'Rollback to previous container version on server'
+inputs:
+  ssh_host:
+    description: 'SSH host address'
+    required: true
+  ssh_user:
+    description: 'SSH username'
+    required: true
+  ssh_key:
+    description: 'SSH private key'
+    required: true
+  ssh_port:
+    description: 'SSH port'
+    required: false
+    default: '22'
+  container_name:
+    description: 'Name of the container'
+    required: true
+  deploy_path:
+    description: 'Deployment directory on server'
+    required: false
+    default: '/opt/todos-app'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Display rollback info
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "⚠️  Initiating Rollback"
+        echo "========================================="
+        echo "Host: ${{ inputs.ssh_host }}"
+        echo "Container: ${{ inputs.container_name }}"
+        echo "========================================="
+
+    - name: Execute rollback via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      env:
+        CONTAINER_NAME: ${{ inputs.container_name }}
+        DEPLOY_PATH: ${{ inputs.deploy_path }}
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        envs: CONTAINER_NAME,DEPLOY_PATH
+        script: |
+          echo "DEPLOYMENT FAILED - Initiating rollback..."
+          cd $DEPLOY_PATH
+
+          # Stop failed container
+          docker stop $CONTAINER_NAME || true
+          docker rm $CONTAINER_NAME || true
+
+          # Restore database backup
+          LATEST_BACKUP=$(ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | head -n1)
+          if [ -n "$LATEST_BACKUP" ]; then
+            cp "$LATEST_BACKUP" $DEPLOY_PATH/data/db.sqlite
+            echo "Database restored from backup: $LATEST_BACKUP"
+          fi
+
+          # Restart previous container
+          if docker ps -a | grep -q "${CONTAINER_NAME}-previous"; then
+            docker rename ${CONTAINER_NAME}-previous $CONTAINER_NAME
+            docker start $CONTAINER_NAME
+            echo "Rolled back to previous version"
+          else
+            echo "ERROR: No previous container found for rollback"
+            exit 1
+          fi
+
+    - name: Rollback summary
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "🔄 Rollback Executed"
+        echo "========================================="
+        echo "Previous container has been restored"
+        echo "Please verify service health"
+        echo "========================================="

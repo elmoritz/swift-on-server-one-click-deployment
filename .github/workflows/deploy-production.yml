@@ -1,0 +1,223 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Type of version increment'
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+        default: 'patch'
+      release_notes:
+        description: 'Release notes (optional)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  create-release-version:
+    name: Create Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        uses: ./.github/actions/git-config
+
+      - name: Bump version
+        id: bump
+        uses: ./.github/actions/version-increment
+        with:
+          version_type: ${{ inputs.version_type }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit version file
+        run: |
+          git add VERSION
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} for production release"
+
+      - name: Create and push tag
+        uses: ./.github/actions/git-tag-push
+        with:
+          version: ${{ steps.bump.outputs.version }}
+          branch: 'main'
+          tag_message: 'Release version'
+
+  pre-deployment-checks:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    needs: create-release-version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate staging health
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ vars.STAGING_URL }}
+          max_retries: '10'
+          retry_interval: '2'
+
+      - name: Run final tests on staging
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: ${{ vars.STAGING_URL }}
+
+  deploy-production:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    needs: [create-release-version, pre-deployment-checks]
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.create-release-version.outputs.version }}
+
+      - name: Build and push Docker image
+        uses: ./.github/actions/docker-build-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          version: ${{ needs.create-release-version.outputs.version }}
+          tags: 'production,latest'
+          push: 'true'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release-version.outputs.version }}
+          name: Release v${{ needs.create-release-version.outputs.version }}
+          body: |
+            ## Release v${{ needs.create-release-version.outputs.version }}
+
+            **Version Type:** ${{ inputs.version_type }}
+
+            ${{ inputs.release_notes || 'No release notes provided.' }}
+
+            ### Version Information
+            - Version: ${{ needs.create-release-version.outputs.version }}
+            - Type: ${{ inputs.version_type }}
+            - Deployed: ${{ github.event.repository.updated_at }}
+
+            ### Deployment
+            This release has been automatically deployed to production.
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Deploy to production server
+        id: deploy
+        uses: ./.github/actions/deploy-server
+        with:
+          ssh_host: ${{ secrets.PRODUCTION_HOST }}
+          ssh_user: ${{ secrets.PRODUCTION_USER }}
+          ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          version: ${{ needs.create-release-version.outputs.version }}
+          container_name: 'todos-production'
+          port: '8080:8080'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Health check
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ vars.PRODUCTION_URL }}
+          max_retries: '30'
+          retry_interval: '3'
+
+      - name: Run smoke tests
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: ${{ vars.PRODUCTION_URL }}
+
+      - name: Remove old production container
+        if: success()
+        uses: ./.github/actions/docker-cleanup
+        with:
+          ssh_host: ${{ secrets.PRODUCTION_HOST }}
+          ssh_user: ${{ secrets.PRODUCTION_USER }}
+          ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          container_name: 'todos-production'
+
+      - name: Rollback on failure
+        if: failure()
+        uses: ./.github/actions/rollback-deployment
+        with:
+          ssh_host: ${{ secrets.PRODUCTION_HOST }}
+          ssh_user: ${{ secrets.PRODUCTION_USER }}
+          ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          container_name: 'todos-production'
+
+      - name: Verify rollback
+        if: failure()
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ vars.PRODUCTION_URL }}
+          max_retries: '20'
+          retry_interval: '3'
+
+  post-deployment-monitoring:
+    name: Monitor Production Deployment
+    runs-on: ubuntu-latest
+    needs: [create-release-version, deploy-production]
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extended monitoring (15 minutes)
+        uses: ./.github/actions/extended-monitoring
+        with:
+          url: ${{ vars.PRODUCTION_URL }}
+          duration_minutes: '15'
+          check_interval_seconds: '30'
+          max_consecutive_failures: '3'
+
+      - name: Final validation
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: ${{ vars.PRODUCTION_URL }}
+
+      - name: Deployment success notification
+        if: success()
+        uses: ./.github/actions/deployment-notification
+        with:
+          status: 'success'
+          environment: 'production'
+          version: ${{ needs.create-release-version.outputs.version }}
+          version_type: ${{ inputs.version_type }}
+          url: ${{ vars.PRODUCTION_URL }}
+
+      - name: Alert on monitoring failure
+        if: failure()
+        uses: ./.github/actions/deployment-notification
+        with:
+          status: 'failure'
+          environment: 'production'
+          version: ${{ needs.create-release-version.outputs.version }}
+          message: 'CRITICAL: Production monitoring failed. Immediate attention required! Consider manual rollback if issues persist.'

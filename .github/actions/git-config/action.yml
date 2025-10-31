@@ -1,0 +1,21 @@
+name: 'Configure Git'
+description: 'Configure Git user for GitHub Actions bot'
+inputs:
+  user_name:
+    description: 'Git user name'
+    required: false
+    default: 'github-actions[bot]'
+  user_email:
+    description: 'Git user email'
+    required: false
+    default: 'github-actions[bot]@users.noreply.github.com'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "${{ inputs.user_name }}"
+        git config user.email "${{ inputs.user_email }}"
+        echo "✅ Git configured as ${{ inputs.user_name }}"

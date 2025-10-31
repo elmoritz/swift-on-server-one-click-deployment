@@ -1,0 +1,53 @@
+# SwiftLint Configuration for Hummingbird Todos
+
+# Rules to enable
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - explicit_init
+  - fatal_error_message
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - multiline_parameters
+  - overridden_super_call
+  - redundant_nil_coalescing
+  - sorted_imports
+  - trailing_closure
+
+# Disabled rules
+disabled_rules:
+  - line_length
+  - todo
+  - identifier_name
+
+# File and directory exclusions
+excluded:
+  - .build
+  - .swiftpm
+  - Tests/LinuxMain.swift
+  - todos-fluent/.build
+  - todos-fluent/.swiftpm
+
+# Configure specific rules
+type_body_length:
+  - 300 # warning
+  - 400 # error
+
+file_length:
+  warning: 500
+  error: 1000
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+# Paths to include for linting
+included:
+  - todos-fluent/Sources
+  - todos-fluent/Tests
+
+reporter: "xcode"

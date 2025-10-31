@@ -1,0 +1,48 @@
+name: 'Setup SwiftLint'
+description: 'Install SwiftLint for Linux'
+inputs:
+  version:
+    description: 'SwiftLint version to install'
+    required: false
+    default: '0.54.0'
+  install_path:
+    description: 'Installation path for SwiftLint binary'
+    required: false
+    default: '/usr/local/bin/'
+
+outputs:
+  installed_version:
+    description: 'SwiftLint version that was installed'
+    value: ${{ inputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install SwiftLint
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        INSTALL_PATH="${{ inputs.install_path }}"
+
+        echo "========================================="
+        echo "Installing SwiftLint"
+        echo "========================================="
+        echo "Version:      $VERSION"
+        echo "Install Path: $INSTALL_PATH"
+        echo "========================================="
+
+        # Download SwiftLint
+        wget -q "https://github.com/realm/SwiftLint/releases/download/${VERSION}/swiftlint_linux.zip"
+
+        # Extract and install
+        unzip -q swiftlint_linux.zip
+        chmod +x swiftlint
+        sudo mv swiftlint "$INSTALL_PATH"
+
+        # Clean up
+        rm -f swiftlint_linux.zip
+
+        # Verify installation
+        swiftlint version
+
+        echo "✅ SwiftLint ${VERSION} installed successfully"

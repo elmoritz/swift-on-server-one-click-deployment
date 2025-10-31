@@ -1,0 +1,56 @@
+name: 'Docker Cleanup'
+description: 'Clean up old Docker containers and images via SSH'
+inputs:
+  ssh_host:
+    description: 'SSH host'
+    required: true
+  ssh_user:
+    description: 'SSH user'
+    required: true
+  ssh_key:
+    description: 'SSH private key'
+    required: true
+  ssh_port:
+    description: 'SSH port'
+    required: false
+    default: '22'
+  container_name:
+    description: 'Container name to remove (with -previous suffix)'
+    required: true
+  prune_images:
+    description: 'Whether to prune unused images'
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Remove old container and prune images
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        script: |
+          echo "========================================="
+          echo "Docker Cleanup"
+          echo "========================================="
+
+          # Remove old container
+          if docker ps -a | grep -q "${{ inputs.container_name }}-previous"; then
+            echo "Removing old container: ${{ inputs.container_name }}-previous"
+            docker rm ${{ inputs.container_name }}-previous || true
+            echo "✅ Old container removed"
+          else
+            echo "No old container found"
+          fi
+
+          # Prune images if requested
+          if [ "${{ inputs.prune_images }}" = "true" ]; then
+            echo "Pruning unused Docker images..."
+            docker image prune -f
+            echo "✅ Docker images pruned"
+          fi
+
+          echo "========================================="

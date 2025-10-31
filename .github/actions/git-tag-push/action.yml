@@ -1,0 +1,67 @@
+name: 'Git Tag and Push'
+description: 'Create a Git tag and push changes to remote repository'
+inputs:
+  version:
+    description: 'Version number for the tag (without v prefix)'
+    required: true
+  branch:
+    description: 'Branch to push'
+    required: false
+    default: 'main'
+  tag_prefix:
+    description: 'Prefix for the tag (e.g., "v")'
+    required: false
+    default: 'v'
+  tag_message:
+    description: 'Tag message (version will be appended)'
+    required: false
+    default: 'Release version'
+  push_tag:
+    description: 'Whether to push the tag'
+    required: false
+    default: 'true'
+  push_branch:
+    description: 'Whether to push the branch'
+    required: false
+    default: 'true'
+
+outputs:
+  tag_name:
+    description: 'Full tag name created'
+    value: ${{ steps.tag.outputs.tag_name }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create and push tag
+      id: tag
+      shell: bash
+      run: |
+        TAG_NAME="${{ inputs.tag_prefix }}${{ inputs.version }}"
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+        echo "========================================="
+        echo "Git Tag and Push"
+        echo "========================================="
+        echo "Tag:     $TAG_NAME"
+        echo "Branch:  ${{ inputs.branch }}"
+        echo "Message: ${{ inputs.tag_message }} ${{ inputs.version }}"
+        echo "========================================="
+
+        # Create annotated tag
+        git tag -a "$TAG_NAME" -m "${{ inputs.tag_message }} ${{ inputs.version }}"
+        echo "✅ Tag created: $TAG_NAME"
+
+        # Push branch if requested
+        if [ "${{ inputs.push_branch }}" = "true" ]; then
+          git push origin ${{ inputs.branch }}
+          echo "✅ Pushed branch: ${{ inputs.branch }}"
+        fi
+
+        # Push tag if requested
+        if [ "${{ inputs.push_tag }}" = "true" ]; then
+          git push origin "$TAG_NAME"
+          echo "✅ Pushed tag: $TAG_NAME"
+        fi
+
+        echo "========================================="

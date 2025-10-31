@@ -1,0 +1,90 @@
+name: 'Deployment Notification'
+description: 'Send deployment status notification with consistent formatting'
+inputs:
+  status:
+    description: 'Deployment status (success/failure/warning)'
+    required: true
+  environment:
+    description: 'Environment name (production/staging)'
+    required: true
+  version:
+    description: 'Version number deployed'
+    required: false
+  version_type:
+    description: 'Type of version increment'
+    required: false
+  url:
+    description: 'Deployment URL'
+    required: false
+  message:
+    description: 'Additional message to include'
+    required: false
+  timestamp:
+    description: 'Timestamp of deployment (defaults to current time)'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Send notification
+      shell: bash
+      run: |
+        STATUS="${{ inputs.status }}"
+        ENVIRONMENT="${{ inputs.environment }}"
+        VERSION="${{ inputs.version }}"
+        TIMESTAMP="${{ inputs.timestamp }}"
+
+        # Use current timestamp if not provided
+        if [ -z "$TIMESTAMP" ]; then
+          TIMESTAMP=$(date -Iseconds)
+        fi
+
+        # Set status symbol and message
+        case "$STATUS" in
+          success)
+            SYMBOL="✅"
+            STATUS_MSG="SUCCESSFUL"
+            ;;
+          failure)
+            SYMBOL="❌"
+            STATUS_MSG="FAILED"
+            ;;
+          warning)
+            SYMBOL="⚠️"
+            STATUS_MSG="WARNING"
+            ;;
+          *)
+            SYMBOL="ℹ️"
+            STATUS_MSG="$STATUS"
+            ;;
+        esac
+
+        echo "========================================="
+        echo "$SYMBOL $(echo $ENVIRONMENT | tr '[:lower:]' '[:upper:]') DEPLOYMENT $STATUS_MSG"
+        echo "========================================="
+
+        if [ -n "$VERSION" ]; then
+          echo "Version: $VERSION"
+        fi
+
+        if [ -n "${{ inputs.version_type }}" ]; then
+          echo "Type: ${{ inputs.version_type }}"
+        fi
+
+        if [ -n "${{ inputs.url }}" ]; then
+          echo "URL: ${{ inputs.url }}"
+        fi
+
+        echo "Deployed at: $TIMESTAMP"
+
+        if [ -n "${{ inputs.message }}" ]; then
+          echo ""
+          echo "${{ inputs.message }}"
+        fi
+
+        echo "========================================="
+
+        # Exit with error code if status is failure
+        if [ "$STATUS" = "failure" ]; then
+          exit 1
+        fi

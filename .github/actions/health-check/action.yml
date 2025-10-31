@@ -1,0 +1,53 @@
+name: 'Health Check'
+description: 'Perform health check on application endpoint'
+inputs:
+  url:
+    description: 'Base URL of the application'
+    required: true
+  max_retries:
+    description: 'Maximum number of retry attempts'
+    required: false
+    default: '30'
+  retry_interval:
+    description: 'Interval between retries in seconds'
+    required: false
+    default: '2'
+  endpoint:
+    description: 'Health check endpoint path'
+    required: false
+    default: '/health'
+
+outputs:
+  status:
+    description: 'Health check status (success/failure)'
+    value: ${{ steps.check.outputs.status }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run health check
+      id: check
+      shell: bash
+      run: |
+        chmod +x scripts/health-check.sh
+
+        FULL_URL="${{ inputs.url }}${{ inputs.endpoint }}"
+
+        echo "========================================="
+        echo "Health Check"
+        echo "========================================="
+        echo "URL: $FULL_URL"
+        echo "Max Retries: ${{ inputs.max_retries }}"
+        echo "Retry Interval: ${{ inputs.retry_interval }}s"
+        echo ""
+
+        if ./scripts/health-check.sh "${{ inputs.url }}" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo ""
+          echo "✅ Health check passed!"
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo ""
+          echo "❌ Health check failed!"
+          exit 1
+        fi
