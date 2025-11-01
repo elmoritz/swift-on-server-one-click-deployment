@@ -6,7 +6,7 @@ url: "https://elmoritz.github.io"
 
 # Theme - using remote_theme for GitHub Pages compatibility
 remote_theme: just-the-docs/just-the-docs
-color_scheme: light
+color_scheme: dark
 
 # Logo and repository
 logo: ""
@@ -34,7 +34,7 @@ aux_links:
     - "https://github.com/elmoritz/swift-on-server-one-click-deployment"
 
 # Footer
-footer_content: 'Copyright &copy; 2025. Made with ❤️ for Swift developers learning deployment.'
+footer_content: "Copyright &copy; 2025. Made with ❤️ for Swift developers learning deployment."
 
 # Code
 # Enable copy button on code blocks
