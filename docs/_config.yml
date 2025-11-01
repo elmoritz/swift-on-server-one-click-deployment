@@ -4,8 +4,8 @@ description: Learn how to build production-ready CI/CD pipelines for Swift serve
 baseurl: "/swift-on-server-one-click-deployment"
 url: "https://elmoritz.github.io"
 
-# Theme
-theme: just-the-docs
+# Theme - using remote_theme for GitHub Pages compatibility
+remote_theme: just-the-docs/just-the-docs
 color_scheme: light
 
 # Logo and repository
@@ -66,6 +66,7 @@ exclude:
 
 # Plugins
 plugins:
+  - jekyll-remote-theme
   - jekyll-seo-tag
   - jekyll-github-metadata
   - jekyll-include-cache
