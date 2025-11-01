@@ -1,4 +1,12 @@
-## Reusable GitHub Actions
+---
+layout: default
+title: Reusable Actions
+nav_order: 7
+description: "Modular GitHub Actions for better maintainability and code reuse"
+permalink: /reusable-actions
+---
+
+# Reusable GitHub Actions
 
 The CI/CD pipeline has been modularized into reusable composite actions for better maintainability and code reuse.
 
@@ -212,43 +220,6 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 
 ---
 
-## Migration Guide
-
-### Switching to Refactored Workflows
-
-The refactored workflows are provided alongside the original ones with `-refactored` suffix:
-
-**Original Files**:
-- `.github/workflows/ci.yml`
-- `.github/workflows/deploy-staging.yml`
-- `.github/workflows/deploy-production.yml`
-
-**Refactored Files** (using composite actions):
-- `.github/workflows/ci-refactored.yml`
-- `.github/workflows/deploy-staging-refactored.yml`
-- `.github/workflows/deploy-production-refactored.yml`
-
-### To Switch:
-
-```bash
-# Backup original workflows
-mv .github/workflows/ci.yml .github/workflows/ci-old.yml
-mv .github/workflows/deploy-staging.yml .github/workflows/deploy-staging-old.yml
-mv .github/workflows/deploy-production.yml .github/workflows/deploy-production-old.yml
-
-# Activate refactored workflows
-mv .github/workflows/ci-refactored.yml .github/workflows/ci.yml
-mv .github/workflows/deploy-staging-refactored.yml .github/workflows/deploy-staging.yml
-mv .github/workflows/deploy-production-refactored.yml .github/workflows/deploy-production.yml
-
-# Commit changes
-git add .github/workflows/
-git commit -m "refactor: switch to modular composite actions"
-git push origin main
-```
-
----
-
 ## Comparison: Before and After
 
 ### Before (Monolithic)
@@ -266,7 +237,7 @@ git push origin main
 
 ### After (Modular)
 
-**deploy-staging-refactored.yml** - 100 lines, cleaner
+**deploy-staging.yml** - 100 lines, cleaner
 
 ```yaml
 - name: Deploy to staging server
@@ -299,59 +270,6 @@ git push origin main
 **Adding new environment**:
 - **Before**: Copy 150+ lines, modify host/secrets
 - **After**: Use existing actions, just change inputs
-
----
-
-## Creating Custom Actions
-
-### Example: Create a notification action
-
-1. **Create directory**:
-```bash
-mkdir -p .github/actions/notify-slack
-```
-
-2. **Create action.yml**:
-```yaml
-name: 'Notify Slack'
-description: 'Send notification to Slack channel'
-inputs:
-  webhook_url:
-    description: 'Slack webhook URL'
-    required: true
-  message:
-    description: 'Message to send'
-    required: true
-  status:
-    description: 'Deployment status'
-    required: false
-    default: 'success'
-
-runs:
-  using: "composite"
-  steps:
-    - name: Send notification
-      shell: bash
-      run: |
-        COLOR="good"
-        if [ "${{ inputs.status }}" == "failure" ]; then
-          COLOR="danger"
-        fi
-
-        curl -X POST ${{ inputs.webhook_url }} \
-          -H 'Content-Type: application/json' \
-          -d "{\"attachments\":[{\"color\":\"$COLOR\",\"text\":\"${{ inputs.message }}\"}]}"
-```
-
-3. **Use in workflow**:
-```yaml
-- name: Notify deployment
-  uses: ./.github/actions/notify-slack
-  with:
-    webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-    message: 'Deployed version 1.2.3 to production'
-    status: 'success'
-```
 
 ---
 
@@ -396,33 +314,6 @@ docker rm container-name || true
 docker rm container-name  # Fails if not exists
 ```
 
-### 5. Documentation
-Document all inputs, outputs, and usage examples in this file.
-
----
-
-## Testing Actions Locally
-
-### Using `act` (GitHub Actions locally)
-
-```bash
-# Install act
-brew install act
-
-# Test an action
-cd .github/actions/health-check
-act -j test --secret-file .env
-```
-
-### Manual Testing
-
-```bash
-# Test version increment
-cd /path/to/repo
-./.github/actions/version-increment/action.yml
-# (Manually run steps from action.yml)
-```
-
 ---
 
 ## Troubleshooting
@@ -464,20 +355,6 @@ Error: Unable to process file command 'output' successfully
 
 ---
 
-## Future Enhancements
-
-Potential actions to create:
-
-1. **Database Backup Action** - Standalone database backup/restore
-2. **Monitoring Setup** - Configure monitoring tools
-3. **Log Aggregation** - Send logs to central service
-4. **Notification Action** - Multi-channel notifications (Slack, Email, Discord)
-5. **Performance Tests** - Automated performance benchmarking
-6. **Security Scan** - Enhanced security scanning
-7. **Cost Estimation** - Estimate deployment costs
-
----
-
 ## Summary
 
 | Action | Purpose | Lines Saved |
@@ -493,4 +370,4 @@ Potential actions to create:
 
 ---
 
-**Modular actions = Cleaner workflows = Easier maintenance!** 🚀
+**Modular actions = Cleaner workflows = Easier maintenance!**

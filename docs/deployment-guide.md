@@ -1,3 +1,11 @@
+---
+layout: default
+title: Deployment Guide
+nav_order: 8
+description: "Comprehensive guide for deploying the application using the CI/CD pipeline"
+permalink: /deployment-guide
+---
+
 # Deployment Guide - Hummingbird Todos Application
 
 This document provides comprehensive instructions for deploying the Hummingbird Todos application using the CI/CD pipeline.
@@ -19,13 +27,16 @@ This document provides comprehensive instructions for deploying the Hummingbird 
 
 The CI/CD pipeline automates the entire deployment process from code commit to production deployment, including:
 
-- Automated testing (unit tests, integration tests, API tests)
-- Code quality checks (SwiftLint)
-- Security scanning (Trivy)
-- Docker image building and publishing
-- Automated deployment to staging and production
-- Health checks and monitoring
-- Automated rollback on failure
+- **Smart Triggers** - Deployments only run when source code or configuration changes
+- **Automated Testing** - Unit tests, integration tests, API tests
+- **Code Quality Checks** - SwiftLint enforces coding standards
+- **Security Scanning** - Trivy vulnerability detection
+- **Docker Image Building** - Multi-stage builds with layer caching
+- **Release Management** - Automatic versioning, tagging, and GitHub Releases
+- **Release Branches** - Persistent branches for each deployment
+- **Staged Deployment** - Staging validation before production
+- **Health Monitoring** - Continuous health checks during and after deployment
+- **Automated Rollback** - Instant rollback on failure
 
 ---
 
@@ -189,21 +200,83 @@ Log out and back in for group changes to take effect.
 
 ---
 
+## Smart Deployment Triggers
+
+To optimize resource usage and reduce unnecessary deployments, the pipeline uses path-based triggers that only run when relevant files change.
+
+### What Triggers Deployments
+
+Deployments are triggered when changes are pushed to files in these directories:
+
+- **Source Code**: `todos-fluent/**` (Swift code, tests, Package.swift)
+- **Docker Config**: `Dockerfile`, `docker-compose.yml`
+- **Deployment Scripts**: `scripts/**`
+- **Linting Rules**: `.swiftlint.yml`
+- **Pipeline Config**: `.github/workflows/**`, `.github/actions/**`
+
+### What Does NOT Trigger Deployments
+
+Changes to documentation and other non-code files will NOT trigger deployments:
+
+- `docs/**` - Documentation files
+- `*.md` - Markdown files (README, guides, etc.)
+- `LICENSE`, `.gitignore`, etc.
+
+**Example Scenarios:**
+
+```bash
+# ✅ WILL trigger deployment
+git add todos-fluent/Sources/App/routes.swift
+git commit -m "Add new API endpoint"
+git push origin main
+
+# ✅ WILL trigger deployment
+git add Dockerfile
+git commit -m "Update Swift version"
+git push origin main
+
+# ❌ Will NOT trigger deployment
+git add README.md
+git commit -m "Update documentation"
+git push origin main
+
+# ❌ Will NOT trigger deployment
+git add docs/deployment-guide.md
+git commit -m "Improve deployment guide"
+git push origin main
+```
+
+This ensures that documentation updates, README changes, and other non-code modifications don't unnecessarily consume CI/CD resources or trigger production deployments.
+
+---
+
 ## Deployment Workflows
 
 ### Automatic Staging Deployment
 
-Staging deployment happens automatically when code is pushed to the `main` branch.
+Staging deployment happens automatically when source code changes are pushed to the `main` branch.
+
+**Triggers:**
+
+The deployment only runs when changes are made to:
+- Swift source code (`todos-fluent/**`)
+- Docker configuration (`Dockerfile`, `docker-compose.yml`)
+- Deployment scripts (`scripts/**`)
+- Linting configuration (`.swiftlint.yml`)
+- Workflow or action files (`.github/**`)
+
+Documentation-only changes (`.md` files) will NOT trigger a deployment.
 
 **Process:**
 
-1. Push to `main` branch
+1. Push source code changes to `main` branch
 2. CI pipeline runs (tests, build, security scan)
-3. If CI passes, staging deployment begins
-4. Docker image is built and pushed to GHCR
-5. Image is deployed to staging server
-6. Health checks and API tests run
-7. 5-minute monitoring period
+3. If CI passes, staging deployment begins:
+   - Version number is read
+   - Docker image is built and pushed to GHCR with `staging` tag
+   - Image is deployed to staging server
+4. Health checks and API tests run
+5. 5-minute monitoring period
 
 **Monitoring:**
 
@@ -214,38 +287,59 @@ Staging deployment happens automatically when code is pushed to the `main` branc
 
 ### Manual Production Deployment
 
-Production deployment requires manual triggering with a version tag.
+Production deployment requires manual triggering via GitHub Actions.
 
 **Process:**
 
-1. Create a git tag for the release:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-2. Go to GitHub Actions > Deploy to Production > Run workflow
-3. Enter the version tag (e.g., `v1.0.0`)
+1. Go to GitHub Actions > Deploy to Production > Run workflow
+2. Select the version increment type:
+   - **major** - Breaking changes (X.0.0)
+   - **minor** - New features (0.X.0)
+   - **patch** - Bug fixes (0.0.X)
+3. Optionally add release notes
 4. Approve the deployment (if reviewers are configured)
 5. Deployment proceeds with:
-   - Pre-deployment validation checks
-   - Docker image build and push
+   - Version number is automatically incremented
+   - Version is committed to main branch
+   - Release branch `release/vX.Y.Z` is created
+   - Git tag `vX.Y.Z` is created and pushed
+   - Pre-deployment validation checks on staging
+   - Docker image build and push with production tags
+   - GitHub Release is created with release notes
    - Production server deployment
    - Health checks and smoke tests
    - 15-minute monitoring period
 
-**Example:**
+**GitHub Release:**
+
+Each production deployment automatically creates a GitHub Release with:
+- Auto-generated changelog based on commits
+- Version information and deployment details
+- Custom release notes (if provided)
+- Links to Docker images
+
+**Example Workflow:**
 
 ```bash
-# Tag a release
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
-
-# Then trigger via GitHub UI:
+# No manual git commands needed!
+# Simply trigger via GitHub UI:
 # Actions > Deploy to Production > Run workflow
-# Input: v1.0.0
+# Select: patch (or minor/major)
+# Optional: Add release notes
+# Click "Run workflow"
 ```
+
+**Release Branches:**
+
+Every successful production deployment creates a permanent release branch:
+- Format: `release/vX.Y.Z`
+- Created only after successful deployment
+- Serves as a snapshot of deployed code
+
+These branches can be used for:
+- Emergency hotfixes
+- Rollback reference
+- Audit trail of production releases
 
 ---
 
@@ -349,8 +443,8 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** CI pipeline fails during Docker build
 
 **Solutions:**
-- Check Swift version compatibility in [Dockerfile](Dockerfile)
-- Verify all dependencies in [Package.swift](todos-fluent/Package.swift)
+- Check Swift version compatibility in Dockerfile
+- Verify all dependencies in Package.swift
 - Check Docker build logs in GitHub Actions
 
 #### 2. Health Checks Fail
@@ -409,53 +503,6 @@ docker logs todos-production -f
 - Click on the workflow run
 - View detailed logs for each step
 
-### Emergency Contacts
-
-In case of critical production issues:
-
-1. Check monitoring dashboards (if configured)
-2. Review GitHub Actions logs
-3. SSH into production server and check logs
-4. Execute manual rollback if necessary
-5. Contact the development team
-
----
-
-## Performance Optimization
-
-### Database Backups
-
-Backups are created automatically before each deployment and stored in `/opt/todos-app/backups/`.
-
-**Retention:** Last 10 backups are kept automatically.
-
-**Manual Backup:**
-```bash
-cp /opt/todos-app/data/db.sqlite \
-   /opt/todos-app/backups/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)
-```
-
-### Monitoring Recommendations
-
-Consider adding:
-
-- **Application Monitoring**: Prometheus + Grafana
-- **Log Aggregation**: ELK Stack or Loki
-- **Alerting**: PagerDuty, Opsgenie, or similar
-- **Uptime Monitoring**: UptimeRobot, Pingdom
-
-### Resource Limits
-
-For production, consider setting Docker resource limits:
-
-```bash
-docker run -d \
-  --name todos-production \
-  --memory="512m" \
-  --cpus="1.0" \
-  ...
-```
-
 ---
 
 ## Security Best Practices
@@ -479,19 +526,3 @@ After successful deployment:
 4. Configure log aggregation
 5. Set up custom domain names
 6. Plan disaster recovery procedures
-
----
-
-## Support
-
-For issues or questions:
-
-- Check GitHub Actions logs
-- Review this documentation
-- Check application logs on servers
-- Contact the development team
-
----
-
-**Version:** 1.0.0
-**Last Updated:** 2025-10-31

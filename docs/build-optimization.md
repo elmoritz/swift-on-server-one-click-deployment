@@ -1,3 +1,11 @@
+---
+layout: default
+title: Build Optimization
+nav_order: 6
+description: "Docker build optimization strategy for faster incremental builds"
+permalink: /build-optimization
+---
+
 # Docker Build Optimization Guide
 
 This document explains the build optimization strategy implemented for faster incremental Docker builds.
@@ -110,14 +118,15 @@ builder-cache-latest
 The optimization is implemented in the reusable composite action and all workflows:
 
 **Composite Action:**
-- [.github/actions/docker-build-push/action.yml](.github/actions/docker-build-push/action.yml) - Reusable Docker build action with optimized caching
+- [.github/actions/docker-build-push/action.yml](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/.github/actions/docker-build-push/action.yml) - Reusable Docker build action with optimized caching
 
 **Workflows (using the composite action):**
-- [ci.yml](.github/workflows/ci.yml) - Main CI pipeline
-- [deploy-staging.yml](.github/workflows/deploy-staging.yml) - Staging deployments
-- [deploy-production.yml](.github/workflows/deploy-production.yml) - Production deployments
+- [ci.yml](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/.github/workflows/ci.yml) - Main CI pipeline
+- [deploy-staging.yml](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/.github/workflows/deploy-staging.yml) - Staging deployments
+- [deploy-production.yml](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/.github/workflows/deploy-production.yml) - Production deployments
 
-> **Note:** The workflows use composite actions for better maintainability. The caching strategy is centralized in the docker-build-push action.
+{: .note }
+> The workflows use composite actions for better maintainability. The caching strategy is centralized in the docker-build-push action.
 
 ### Cache Configuration
 

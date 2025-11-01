@@ -90,9 +90,9 @@ Explore **[GitHub Actions Primer](github-actions-primer)** if you want to unders
 
 Review the **[Pipeline Architecture](pipeline-architecture)** for design patterns you might adopt.
 
-Check out **[Build Optimization](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/BUILD_OPTIMIZATION.md)** for Docker registry-based caching (5-10× speedup).
+Check out **[Build Optimization](build-optimization)** for Docker registry-based caching (5-10× speedup).
 
-Study the **[Reusable Actions](https://github.com/elmoritz/swift-on-server-one-click-deployment/blob/main/REUSABLE_ACTIONS.md)** to see how to create modular GitHub Actions.
+Study the **[Reusable Actions](reusable-actions)** to see how to create modular GitHub Actions.
 
 **Estimated time:** 30-60 minutes
 

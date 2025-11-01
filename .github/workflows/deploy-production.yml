@@ -48,6 +48,7 @@ jobs:
         run: |
           git add VERSION
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} for production release"
+          git push origin main
 
       - name: Create and push tag
         uses: ./.github/actions/git-tag-push
@@ -221,3 +222,34 @@ jobs:
           environment: 'production'
           version: ${{ needs.create-release-version.outputs.version }}
           message: 'CRITICAL: Production monitoring failed. Immediate attention required! Consider manual rollback if issues persist.'
+
+  create-release-branch:
+    name: Create Release Branch
+    runs-on: ubuntu-latest
+    needs: [create-release-version, post-deployment-monitoring]
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        uses: ./.github/actions/git-config
+
+      - name: Create release branch
+        run: |
+          VERSION="${{ needs.create-release-version.outputs.version }}"
+          BRANCH_NAME="release/v${VERSION}"
+
+          # Fetch the tag
+          git fetch origin tag "v${VERSION}"
+
+          # Create the release branch from the tag
+          git checkout -B "${BRANCH_NAME}" "v${VERSION}"
+          git push origin "${BRANCH_NAME}"
+
+          echo "✅ Created release branch: ${BRANCH_NAME}"
+          echo "This branch represents the successfully deployed version v${VERSION}"

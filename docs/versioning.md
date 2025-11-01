@@ -1,3 +1,11 @@
+---
+layout: default
+title: Versioning System
+nav_order: 9
+description: "Automated semantic versioning with build number tracking"
+permalink: /versioning
+---
+
 # Automated Versioning System
 
 This project uses an automated semantic versioning system with automatic build number tracking.
@@ -94,25 +102,6 @@ git push origin main
 6. ✅ 15-minute monitoring period
 7. ✅ Auto-rollback on any failure
 
-#### Option 2: Via Command Line (Manual)
-
-If you prefer manual version management:
-
-```bash
-# Show current version
-./scripts/version-manager.sh show
-
-# Increment for patch release
-./scripts/version-manager.sh patch
-
-# Commit and push
-git add VERSION
-git commit -m "chore: bump version for patch release"
-git push origin main
-
-# Then trigger production deployment via GitHub UI
-```
-
 ## Version Manager Script
 
 The `scripts/version-manager.sh` script provides manual version control:
@@ -128,18 +117,12 @@ The `scripts/version-manager.sh` script provides manual version control:
 
 # Increment patch version (bugfix)
 ./scripts/version-manager.sh patch
-# or
-./scripts/version-manager.sh bugfix
 
 # Increment minor version (feature)
 ./scripts/version-manager.sh minor
-# or
-./scripts/version-manager.sh feature
 
 # Increment major version (breaking)
 ./scripts/version-manager.sh major
-# or
-./scripts/version-manager.sh breaking
 
 # Get current version (output only)
 ./scripts/version-manager.sh get
@@ -172,16 +155,6 @@ $ ./scripts/version-manager.sh build
 $ ./scripts/version-manager.sh patch
 [SUCCESS] Patch version incremented (bugfix)
 1.2.4.1
-
-# Create a minor release
-$ ./scripts/version-manager.sh minor
-[SUCCESS] Minor version incremented (new feature)
-1.3.0.1
-
-# Create a major release
-$ ./scripts/version-manager.sh major
-[SUCCESS] Major version incremented (breaking change)
-2.0.0.1
 ```
 
 ## Version Tracking
@@ -219,63 +192,6 @@ ghcr.io/yourname/hummingbirdpublication:staging-abc123  (git SHA)
 ghcr.io/yourname/hummingbirdpublication:1.2.3.1
 ghcr.io/yourname/hummingbirdpublication:production
 ghcr.io/yourname/hummingbirdpublication:latest
-```
-
-## Version History
-
-All version changes are tracked through:
-
-1. **Git commits** - Version file changes are committed
-2. **Git tags** - Production releases are tagged (e.g., `v1.2.3.1`)
-3. **GitHub Releases** - Production deployments create releases
-4. **Docker image tags** - All builds are tagged with version numbers
-
-### View Version History
-
-```bash
-# View all version-related commits
-git log --oneline --grep="version"
-
-# View all release tags
-git tag -l "v*"
-
-# View specific release
-git show v1.2.3.1
-```
-
-## CI/CD Integration
-
-### CI Pipeline (Automatic on Push to Main)
-
-```yaml
-1. Run tests
-2. Increment build number (0.1.0.5 → 0.1.0.6)
-3. Commit VERSION file
-4. Build Docker image with version tag
-5. Push to container registry
-6. Deploy to staging
-```
-
-### Staging Deployment (Automatic on Main)
-
-```yaml
-1. Read current version from VERSION file
-2. Use that version for deployment
-3. Tag Docker image with version
-4. Deploy to staging server
-5. Run health checks and API tests
-```
-
-### Production Deployment (Manual Trigger)
-
-```yaml
-1. User selects version type (major/minor/patch)
-2. Version bumped and committed
-3. Git tag created (e.g., v1.2.3.1)
-4. Validate staging health
-5. Build and deploy to production
-6. Create GitHub Release
-7. Monitor for 15 minutes
 ```
 
 ## Best Practices
@@ -355,19 +271,6 @@ git add VERSION
 git commit -m "chore: resolve version conflict"
 ```
 
-### Manual Version Reset
-
-**Problem:** Need to reset version for testing
-
-**Solution:**
-```bash
-# Edit VERSION file manually
-echo "0.1.0.1" > VERSION
-git add VERSION
-git commit -m "chore: reset version for testing"
-git push origin main
-```
-
 ### Check Deployed Version
 
 **On Staging:**
@@ -420,4 +323,4 @@ A: The project starts at `0.1.0.1`. First production release could be `1.0.0.1`.
 
 ---
 
-**Version tracking simplified. Focus on building, not versioning.** 🚀
+**Version tracking simplified. Focus on building, not versioning.**

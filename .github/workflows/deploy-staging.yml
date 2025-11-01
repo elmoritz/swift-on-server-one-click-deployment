@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'todos-fluent/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.swiftlint.yml'
+      - '.github/workflows/deploy-staging.yml'
+      - '.github/actions/**'
   workflow_dispatch:
 
 env:

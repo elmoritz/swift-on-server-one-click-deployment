@@ -1,6 +1,7 @@
 - [x] using docker compose
 - [x] docker compose mechanics to cache build stage
-- [x] conect to server via SSH
+- [x] connect to server via SSH
 - [x] health endpoint
 - [x] version endpoint connected to the actual version of the build
 - [ ] convert all bash scripts to swift-scripts
+- [ ] only create on release branch after everything is done successfully

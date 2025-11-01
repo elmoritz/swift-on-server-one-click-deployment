@@ -3,8 +3,24 @@ name: CI - Test and Build
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'todos-fluent/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.swiftlint.yml'
+      - '.github/workflows/**'
+      - '.github/actions/**'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'todos-fluent/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.swiftlint.yml'
+      - '.github/workflows/**'
+      - '.github/actions/**'
 
 env:
   SWIFT_VERSION: '5.9'
