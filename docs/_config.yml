@@ -1,0 +1,83 @@
+# Jekyll configuration for GitHub Pages
+title: Swift Server Deployment Pipeline
+description: Learn how to build production-ready CI/CD pipelines for Swift server applications
+baseurl: "/swift-on-server-one-click-deployment"
+url: "https://elmoritz.github.io"
+
+# Theme
+theme: just-the-docs
+color_scheme: light
+
+# Logo and repository
+logo: ""
+repository: elmoritz/swift-on-server-one-click-deployment
+
+# Search
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 3
+  preview_words_before: 5
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+# Heading anchor links
+heading_anchors: true
+
+# Aux links (top right)
+aux_links:
+  "View on GitHub":
+    - "https://github.com/elmoritz/swift-on-server-one-click-deployment"
+  "Give a Star ⭐":
+    - "https://github.com/elmoritz/swift-on-server-one-click-deployment"
+
+# Footer
+footer_content: 'Copyright &copy; 2025. Made with ❤️ for Swift developers learning deployment.'
+
+# Code
+# Enable copy button on code blocks
+enable_copy_code_button: true
+
+# Syntax highlighting
+kramdown:
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+# Navigation
+# Display a "Back to top" link at the bottom of each page
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Collections (if needed in future)
+collections_dir: collections
+
+# Exclude files from the build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .sass-cache
+  - .jekyll-cache
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+  - jekyll-github-metadata
+  - jekyll-include-cache
+
+# Callouts (for tips, warnings, etc.)
+callouts:
+  warning:
+    title: Warning
+    color: red
+  note:
+    title: Note
+    color: blue
+  tip:
+    title: Tip
+    color: green
