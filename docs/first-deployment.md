@@ -54,7 +54,7 @@ Before starting, ensure you have:
 **Optional (for actual deployment):**
 - 🔹 A server with SSH access (for staging/production)
 - 🔹 Docker installed on the server
-- 🔹 GitHub secrets configured (see [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md))
+- 🔹 GitHub secrets configured (see [SETUP_CHECKLIST.md](quick-start-checklist))
 
 **Note:** This tutorial can be completed without a deployment server - you'll see the CI/CD pipeline run and understand the process, but the actual deployment steps will be simulated.
 
@@ -509,7 +509,7 @@ The workflow will fail at the SSH step, which is expected. In a real setup, you'
 - SSH access configured
 - GitHub secrets set up with server credentials
 
-See [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) for how to configure this.
+See [SETUP_CHECKLIST.md](quick-start-checklist) for how to configure this.
 
 ### 7.3 Automatic Rollback Example
 
@@ -765,29 +765,29 @@ Let's recap the entire flow:
 Congratulations! You've completed your first deployment. Here's what to explore next:
 
 ### 1. Understand the Architecture
-Read [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) to understand **why** the pipeline is designed this way.
+Read [PIPELINE_ARCHITECTURE.md](pipeline-architecture) to understand **why** the pipeline is designed this way.
 
 ### 2. Learn GitHub Actions Deeply
-Read [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md) to understand how to customize workflows.
+Read [GITHUB_ACTIONS_PRIMER.md](github-actions-primer) to understand how to customize workflows.
 
 ### 3. Explore Versioning
-Read [VERSIONING.md](VERSIONING.md) to learn about semantic versioning and manual version management.
+Read [VERSIONING.md](versioning) to learn about semantic versioning and manual version management.
 
 ### 4. Optimize Builds
-Read [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) to understand the Docker caching strategy.
+Read [BUILD_OPTIMIZATION.md](build-optimization) to understand the Docker caching strategy.
 
 ### 5. Study the Reusable Actions
-Read [REUSABLE_ACTIONS.md](REUSABLE_ACTIONS.md) and explore [.github/actions/](.github/actions/) to see how to create modular workflows.
+Read [REUSABLE_ACTIONS.md](reusable-actions) and explore [.github/actions/](.github/actions/) to see how to create modular workflows.
 
 ### 6. Set Up Your Own Pipeline
-Follow [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) to adapt this pipeline to your own project.
+Follow [SETUP_CHECKLIST.md](quick-start-checklist) to adapt this pipeline to your own project.
 
 ### 7. Practice Troubleshooting
 Try breaking things intentionally:
 - Make tests fail
 - Introduce a linting error
 - Deploy a version that fails health checks
-- Then use [TROUBLESHOOTING.md](TROUBLESHOOTING.md) to fix them
+- Then use [TROUBLESHOOTING.md](troubleshooting) to fix them
 
 ---
 
@@ -896,10 +896,10 @@ docker build -t todos-test .
 
 ### Need More Help?
 
-- Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for comprehensive debugging guide
-- Review [DEPLOYMENT.md](DEPLOYMENT.md) for deployment details
+- Check [TROUBLESHOOTING.md](troubleshooting) for comprehensive debugging guide
+- Review [DEPLOYMENT.md](deployment-guide) for deployment details
 - Check workflow logs in GitHub Actions
-- Verify your setup with [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)
+- Verify your setup with [SETUP_CHECKLIST.md](quick-start-checklist)
 
 ---
 

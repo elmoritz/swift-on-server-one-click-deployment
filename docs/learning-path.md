@@ -94,42 +94,42 @@ You've built Swift applications but never deployed to production. This path will
 
 #### Recommended Reading Order:
 
-1. **Start Here:** [README.md](README.md)
+1. **Start Here:** [README.md](readme)
    - Understand what this project is
    - Get the application running locally with Docker
    - Test the API endpoints
    - **Goal:** Have the app running on your machine
 
-2. **Learn GitHub Actions:** [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md)
+2. **Learn GitHub Actions:** [GITHUB_ACTIONS_PRIMER.md](github-actions-primer)
    - Understand what GitHub Actions is
    - Learn about workflows, jobs, and steps
    - Understand how CI/CD works conceptually
    - **Goal:** Understand the automation foundation
 
-3. **Understand the Pipeline:** [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
+3. **Understand the Pipeline:** [PIPELINE_ARCHITECTURE.md](pipeline-architecture)
    - Why this specific workflow structure?
    - What happens on each commit?
    - Staging vs. production deployments
    - **Goal:** Understand the big picture
 
-4. **Hands-On Tutorial:** [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md)
+4. **Hands-On Tutorial:** [FIRST_DEPLOYMENT.md](first-deployment)
    - Follow step-by-step to make your first deployment
    - See the entire pipeline in action
    - Understand each automated step
    - **Goal:** Successfully deploy a change from code to production
 
-5. **Deep Dive:** [DEPLOYMENT.md](DEPLOYMENT.md)
+5. **Deep Dive:** [DEPLOYMENT.md](deployment-guide)
    - Detailed deployment procedures
    - Manual deployment options
    - Rollback procedures
    - **Goal:** Understand all deployment options
 
-6. **Quick Reference:** [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)
+6. **Quick Reference:** [SETUP_CHECKLIST.md](quick-start-checklist)
    - Checklist for setting up your own pipeline
    - Environment variables and secrets
    - **Goal:** Know how to set this up for your own project
 
-7. **Troubleshooting:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+7. **Troubleshooting:** [TROUBLESHOOTING.md](troubleshooting)
    - Common issues and solutions
    - Debugging deployment failures
    - **Goal:** Handle problems independently
@@ -153,28 +153,28 @@ You've deployed applications before (maybe with Heroku, Railway, or basic Docker
 
 #### Recommended Reading Order:
 
-1. **Quick Start:** [README.md](README.md)
+1. **Quick Start:** [README.md](readme)
    - Skim the overview
    - Focus on the "Pipeline Overview" section
    - **Goal:** Understand this specific setup
 
-2. **Architecture Decisions:** [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
+2. **Architecture Decisions:** [PIPELINE_ARCHITECTURE.md](pipeline-architecture)
    - Why this workflow structure over simpler alternatives?
    - Registry-based caching strategy
    - Blue-green deployment pattern
    - **Goal:** Understand the "why" behind design choices
 
-3. **Hands-On:** [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md)
+3. **Hands-On:** [FIRST_DEPLOYMENT.md](first-deployment)
    - Quickly go through the tutorial
    - Focus on the GitHub Actions workflow details
    - **Goal:** See how all pieces connect
 
 4. **Advanced Topics:**
-   - [VERSIONING.md](VERSIONING.md) - Automatic version management
-   - [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) - Docker caching strategy
-   - [REUSABLE_ACTIONS.md](REUSABLE_ACTIONS.md) - Creating modular actions
+   - [VERSIONING.md](versioning) - Automatic version management
+   - [BUILD_OPTIMIZATION.md](build-optimization) - Docker caching strategy
+   - [REUSABLE_ACTIONS.md](reusable-actions) - Creating modular actions
 
-5. **Reference:** [DEPLOYMENT.md](DEPLOYMENT.md) + [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+5. **Reference:** [DEPLOYMENT.md](deployment-guide) + [TROUBLESHOOTING.md](troubleshooting)
    - Use as reference when needed
 
 #### Focus Areas:
@@ -199,15 +199,15 @@ You're already deploying to production and want to see alternative patterns, opt
    - High-level overview of the entire pipeline
    - **Goal:** Map this to your existing knowledge
 
-2. **Architecture Deep Dive:** [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
+2. **Architecture Deep Dive:** [PIPELINE_ARCHITECTURE.md](pipeline-architecture)
    - Design decisions and trade-offs
    - Compare to your current approach
    - **Goal:** Identify patterns you can adopt
 
 3. **Technical Details:**
-   - [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) - Registry caching (5-10x speedup)
-   - [REUSABLE_ACTIONS.md](REUSABLE_ACTIONS.md) - DRY principle for workflows
-   - [VERSIONING.md](VERSIONING.md) - Automatic semantic versioning
+   - [BUILD_OPTIMIZATION.md](build-optimization) - Registry caching (5-10x speedup)
+   - [REUSABLE_ACTIONS.md](reusable-actions) - DRY principle for workflows
+   - [VERSIONING.md](versioning) - Automatic semantic versioning
 
 4. **Workflow Code Review:**
    - [.github/workflows/ci.yml](.github/workflows/ci.yml)
@@ -278,7 +278,7 @@ You're already deploying to production and want to see alternative patterns, opt
 
 **Files to study:**
 - [Dockerfile](Dockerfile)
-- [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md)
+- [BUILD_OPTIMIZATION.md](build-optimization)
 
 ---
 
@@ -293,7 +293,7 @@ You're already deploying to production and want to see alternative patterns, opt
 - GitHub release creation
 
 **Files to study:**
-- [VERSIONING.md](VERSIONING.md)
+- [VERSIONING.md](versioning)
 - [scripts/version-manager.sh](scripts/version-manager.sh)
 
 ---
@@ -353,17 +353,17 @@ swift-on-server-one-click-deployment/
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [README.md](README.md) | Project overview & quick start | Everyone |
-| [LEARNING_PATH.md](LEARNING_PATH.md) (this file) | Navigate the learning materials | Everyone |
-| [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md) | Introduction to GitHub Actions | Beginners |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | Why this CI/CD design? | All levels |
-| [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md) | Step-by-step tutorial | Beginners/Intermediate |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Complete deployment guide | Intermediate/Advanced |
-| [VERSIONING.md](VERSIONING.md) | Version management details | Intermediate/Advanced |
-| [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) | Docker caching strategy | Advanced |
-| [REUSABLE_ACTIONS.md](REUSABLE_ACTIONS.md) | Composite actions guide | Advanced |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues & solutions | All levels |
-| [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) | Setup checklist | All levels |
+| [README.md](readme) | Project overview & quick start | Everyone |
+| [LEARNING_PATH.md](learning-path) (this file) | Navigate the learning materials | Everyone |
+| [GITHUB_ACTIONS_PRIMER.md](github-actions-primer) | Introduction to GitHub Actions | Beginners |
+| [PIPELINE_ARCHITECTURE.md](pipeline-architecture) | Why this CI/CD design? | All levels |
+| [FIRST_DEPLOYMENT.md](first-deployment) | Step-by-step tutorial | Beginners/Intermediate |
+| [DEPLOYMENT.md](deployment-guide) | Complete deployment guide | Intermediate/Advanced |
+| [VERSIONING.md](versioning) | Version management details | Intermediate/Advanced |
+| [BUILD_OPTIMIZATION.md](build-optimization) | Docker caching strategy | Advanced |
+| [REUSABLE_ACTIONS.md](reusable-actions) | Composite actions guide | Advanced |
+| [TROUBLESHOOTING.md](troubleshooting) | Common issues & solutions | All levels |
+| [SETUP_CHECKLIST.md](quick-start-checklist) | Setup checklist | All levels |
 
 ---
 
@@ -371,9 +371,9 @@ swift-on-server-one-click-deployment/
 
 ### For Talk Attendees
 
-1. **Before the talk:** Read [README.md](README.md) and [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md)
-2. **During the talk:** Follow along with [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
-3. **After the talk:** Complete [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md) tutorial
+1. **Before the talk:** Read [README.md](readme) and [GITHUB_ACTIONS_PRIMER.md](github-actions-primer)
+2. **During the talk:** Follow along with [PIPELINE_ARCHITECTURE.md](pipeline-architecture)
+3. **After the talk:** Complete [FIRST_DEPLOYMENT.md](first-deployment) tutorial
 
 ### For Self-Learners
 
@@ -384,10 +384,10 @@ swift-on-server-one-click-deployment/
 
 ### For Quick Reference
 
-- **Need to deploy?** → [DEPLOYMENT.md](DEPLOYMENT.md)
-- **Something broke?** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-- **Setting up your own?** → [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)
-- **Understanding versions?** → [VERSIONING.md](VERSIONING.md)
+- **Need to deploy?** → [DEPLOYMENT.md](deployment-guide)
+- **Something broke?** → [TROUBLESHOOTING.md](troubleshooting)
+- **Setting up your own?** → [SETUP_CHECKLIST.md](quick-start-checklist)
+- **Understanding versions?** → [VERSIONING.md](versioning)
 
 ---
 

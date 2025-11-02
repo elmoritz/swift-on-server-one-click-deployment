@@ -1183,8 +1183,8 @@ This pipeline balances **safety, speed, and simplicity** for typical Swift serve
 
 Now that you understand the **why**, explore the **how**:
 
-1. **See it in action:** [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md)
-2. **Understand GitHub Actions:** [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md)
+1. **See it in action:** [FIRST_DEPLOYMENT.md](first-deployment)
+2. **Understand GitHub Actions:** [GITHUB_ACTIONS_PRIMER.md](github-actions-primer)
 3. **Read the implementation:** [.github/workflows/](.github/workflows/)
 4. **Study the actions:** [.github/actions/](.github/actions/)
 

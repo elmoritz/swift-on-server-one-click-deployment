@@ -892,10 +892,10 @@ Now that you understand GitHub Actions:
    - [.github/actions/](.github/actions/)
 
 3. **Read the architecture guide:**
-   - [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
+   - [PIPELINE_ARCHITECTURE.md](pipeline-architecture)
 
 4. **Try the hands-on tutorial:**
-   - [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md)
+   - [FIRST_DEPLOYMENT.md](first-deployment)
 
 ---
 
