@@ -36,7 +36,7 @@ runs:
         echo "========================================="
 
     - name: Execute rollback via SSH
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.4
       env:
         CONTAINER_NAME: ${{ inputs.container_name }}
         DEPLOY_PATH: ${{ inputs.deploy_path }}

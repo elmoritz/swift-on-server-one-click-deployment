@@ -228,7 +228,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 
 ```yaml
 - name: Deploy to staging server
-  uses: appleboy/ssh-action@v1.0.3
+  uses: appleboy/ssh-action@v1.2.4
   with:
     host: ${{ secrets.STAGING_HOST }}
     username: ${{ secrets.STAGING_USER }}

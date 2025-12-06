@@ -26,7 +26,7 @@ runs:
   using: "composite"
   steps:
     - name: Remove old container and prune images
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.4
       with:
         host: ${{ inputs.ssh_host }}
         username: ${{ inputs.ssh_user }}
