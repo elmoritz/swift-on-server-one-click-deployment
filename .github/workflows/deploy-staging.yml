@@ -68,7 +68,7 @@ jobs:
           ssh_host: ${{ secrets.STAGING_HOST }}
           ssh_user: ${{ secrets.STAGING_USER }}
           ssh_key: ${{ secrets.STAGING_SSH_KEY }}
-          ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.STAGING_PORT || 22 }}
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
@@ -97,7 +97,7 @@ jobs:
           ssh_host: ${{ secrets.STAGING_HOST }}
           ssh_user: ${{ secrets.STAGING_USER }}
           ssh_key: ${{ secrets.STAGING_SSH_KEY }}
-          ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.STAGING_PORT || 22 }}
           container_name: "todos-staging"
 

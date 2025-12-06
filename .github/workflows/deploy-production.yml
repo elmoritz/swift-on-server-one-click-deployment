@@ -136,7 +136,7 @@ jobs:
           ssh_host: ${{ secrets.PRODUCTION_HOST }}
           ssh_user: ${{ secrets.PRODUCTION_USER }}
           ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
@@ -165,7 +165,7 @@ jobs:
           ssh_host: ${{ secrets.PRODUCTION_HOST }}
           ssh_user: ${{ secrets.PRODUCTION_USER }}
           ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
           container_name: 'todos-production'
 
@@ -176,7 +176,7 @@ jobs:
           ssh_host: ${{ secrets.PRODUCTION_HOST }}
           ssh_user: ${{ secrets.PRODUCTION_USER }}
           ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.PRODUCTION_PORT || 22 }}
           container_name: 'todos-production'
 
