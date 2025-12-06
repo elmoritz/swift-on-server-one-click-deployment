@@ -122,6 +122,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test, version-increment]
     if: always() && (needs.lint.result == 'success' && needs.test.result == 'success')
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
