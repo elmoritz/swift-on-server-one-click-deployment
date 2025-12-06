@@ -153,11 +153,18 @@ runs:
             echo "Pulling image: $IMAGE_TAG"
             docker pull $IMAGE_TAG
 
-            # Backup current container
-            if docker ps -a | grep -q "$CONTAINER_NAME"; then
+            # Clean up old backup containers first
+            if docker ps -a | grep -q "${CONTAINER_NAME}-previous"; then
+              echo "Removing old backup container..."
+              docker stop ${CONTAINER_NAME}-previous 2>/dev/null || true
+              docker rm ${CONTAINER_NAME}-previous 2>/dev/null || true
+            fi
+
+            # Stop and backup current container
+            if docker ps -a | grep -q "^${CONTAINER_NAME}$" || docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
               echo "Backing up current container..."
-              docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous || true
-              docker stop ${CONTAINER_NAME}-previous || true
+              docker stop $CONTAINER_NAME 2>/dev/null || true
+              docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous 2>/dev/null || true
             fi
 
             # Backup database if exists
@@ -185,9 +192,9 @@ runs:
             sleep 10
           fi
 
-          # Store deployment metadata
-          echo "$VERSION" > $DEPLOY_PATH/current-version.txt
-          echo "$(date -Iseconds)" > $DEPLOY_PATH/last-deployment.txt
+          # Store deployment metadata (with error handling)
+          echo "$VERSION" > $DEPLOY_PATH/current-version.txt 2>/dev/null || echo "Warning: Could not write version metadata (permission denied)"
+          echo "$(date -Iseconds)" > $DEPLOY_PATH/last-deployment.txt 2>/dev/null || echo "Warning: Could not write deployment timestamp (permission denied)"
 
           # Clean up old images
           docker image prune -f

@@ -72,8 +72,8 @@ jobs:
           ssh_port: ${{ secrets.STAGING_PORT || 22 }}
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
-          version: ${{ steps.version.outputs.version }}
-          container_name: "todos-staging"
+          version: "latest"
+          container_name: "todos-app"
           port: "10000:8080"
           compose_folder: ${{ vars.STAGING_COMPOSE_FOLDER || secrets.STAGING_COMPOSE_FOLDER || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
