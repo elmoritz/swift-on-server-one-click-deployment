@@ -10,3 +10,5 @@ xcuserdata/
 *.pem
 *.sqlite
 .env
+DerivedData/
+.derivedData/
