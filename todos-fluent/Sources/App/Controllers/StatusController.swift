@@ -43,9 +43,13 @@ struct StatusController<Context: RequestContext> {
         let db = self.fluent.db()
         var databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: "Not checked")
 
-        // Try a simple query to verify database connectivity
+        // Verify database connectivity by attempting a transaction
+        // This tests actual database connectivity without depending on any models
         do {
-            _ = try await db.raw("SELECT 1").all()
+            try await db.transaction { transaction in
+                // Empty transaction - just verifies we can connect to the database
+                transaction.eventLoop.makeSucceededFuture(())
+            }.get()
             databaseHealth = HealthResponse.DatabaseHealth(connected: true, message: "Connected")
         } catch {
             databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: "Connection failed: \(error.localizedDescription)")
