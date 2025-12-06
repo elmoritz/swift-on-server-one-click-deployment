@@ -22,6 +22,9 @@ jobs:
   deploy-staging:
     name: Deploy to Staging Server
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     environment:
       name: staging
       url: ${{ vars.STAGING_URL }}
