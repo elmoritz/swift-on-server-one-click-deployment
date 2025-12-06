@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy only package manifests for dependency resolution
 COPY todos-fluent/Package.* ./
-
+RUN swift package reset
 # Resolve dependencies (this layer is cached when Package.resolved doesn't change)
 RUN swift package resolve
 
