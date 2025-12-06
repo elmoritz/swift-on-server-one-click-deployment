@@ -1,5 +1,5 @@
-name: 'Build and Push Docker Image'
-description: 'Build Docker image and push to GitHub Container Registry'
+name: 'Build Docker Image'
+description: 'Build Docker image with caching'
 inputs:
   registry:
     description: 'Container registry URL'
@@ -15,10 +15,6 @@ inputs:
     description: 'Additional tags (comma-separated)'
     required: false
     default: ''
-  push:
-    description: 'Whether to push the image'
-    required: false
-    default: 'true'
   github_token:
     description: 'GitHub token for registry authentication'
     required: true
@@ -30,6 +26,9 @@ outputs:
   digest:
     description: 'Image digest'
     value: ${{ steps.build.outputs.digest }}
+  tags:
+    description: 'All tags that were prepared for the image'
+    value: ${{ steps.prepare-tags.outputs.tags }}
 
 runs:
   using: "composite"
@@ -77,12 +76,12 @@ runs:
         echo "tags=$TAGS" >> $GITHUB_OUTPUT
         echo "Building with tags: $TAGS"
 
-    - name: Build and push Docker image
+    - name: Build Docker image
       id: build
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: ${{ inputs.push }}
+        push: false
         tags: ${{ steps.prepare-tags.outputs.tags }}
         build-args: |
           VERSION=${{ inputs.version }}
@@ -98,6 +97,7 @@ runs:
           org.opencontainers.image.version=${{ inputs.version }}
           org.opencontainers.image.created=${{ github.event.repository.updated_at }}
           org.opencontainers.image.revision=${{ github.sha }}
+        outputs: type=docker,dest=/tmp/image.tar
 
     - name: Display build info
       shell: bash
@@ -108,5 +108,5 @@ runs:
         echo "Image: ${{ inputs.registry }}/${{ inputs.image_name }}"
         echo "Version: ${{ inputs.version }}"
         echo "Tags: ${{ steps.prepare-tags.outputs.tags }}"
-        echo "Pushed: ${{ inputs.push }}"
+        echo "Image saved to: /tmp/image.tar"
         echo "========================================="

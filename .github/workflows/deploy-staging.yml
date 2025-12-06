@@ -18,6 +18,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
   STAGING_URL: ${{ vars.STAGING_URL }}
+  STAGING_COMPOSE_FOLDER: ${{ vars.STAGING_COMPOSE_FOLDER }}
 
 jobs:
   deploy-staging:
@@ -42,24 +43,21 @@ jobs:
 
       - name: Build Docker image
         id: docker-build
-        uses: ./.github/actions/docker-build-push
+        uses: ./.github/actions/docker-build
         with:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ steps.version.outputs.version }}
           tags: "latest"
-          push: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Docker image
         id: docker-push
-        uses: ./.github/actions/docker-build-push
+        uses: ./.github/actions/docker-push
         with:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
-          version: ${{ steps.version.outputs.version }}
-          tags: "latest"
-          push: "true"
+          tags: ${{ steps.docker-build.outputs.tags }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to staging server
@@ -75,7 +73,7 @@ jobs:
           version: "latest"
           container_name: "todos-app"
           port: "10000:8080"
-          compose_folder: ${{ vars.STAGING_COMPOSE_FOLDER || secrets.STAGING_COMPOSE_FOLDER || '' }}
+          compose_folder: ${{ env.STAGING_COMPOSE_FOLDER }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       # - name: Health check

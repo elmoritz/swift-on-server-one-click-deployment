@@ -135,14 +135,23 @@ jobs:
         id: version
         uses: ./.github/actions/read-version
 
-      - name: Build and push Docker image
-        uses: ./.github/actions/docker-build-push
+      - name: Build Docker image
+        id: docker-build
+        uses: ./.github/actions/docker-build
         with:
           registry: 'ghcr.io'
           image_name: ${{ github.repository }}
           version: ${{ steps.version.outputs.version }}
           tags: 'latest'
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: ./.github/actions/docker-push
+        with:
+          registry: 'ghcr.io'
+          image_name: ${{ github.repository }}
+          tags: ${{ steps.docker-build.outputs.tags }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   integration-test:

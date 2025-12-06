@@ -96,14 +96,22 @@ jobs:
         with:
           ref: v${{ needs.create-release-version.outputs.version }}
 
-      - name: Build and push Docker image
-        uses: ./.github/actions/docker-build-push
+      - name: Build Docker image
+        id: docker-build
+        uses: ./.github/actions/docker-build
         with:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ needs.create-release-version.outputs.version }}
           tags: 'production,latest'
-          push: 'true'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        uses: ./.github/actions/docker-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.docker-build.outputs.tags }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
