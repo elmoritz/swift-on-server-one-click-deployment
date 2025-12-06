@@ -47,7 +47,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ steps.version.outputs.version }}
-          tags: "staging"
+          tags: "latest"
           push: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -58,7 +58,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ steps.version.outputs.version }}
-          tags: "staging"
+          tags: "latest"
           push: "true"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
