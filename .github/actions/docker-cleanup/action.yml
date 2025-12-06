@@ -32,6 +32,7 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
+        passphrase: ${{ secrets.KEY_PASSPHRASE }}
         script: |
           echo "========================================="
           echo "Docker Cleanup"

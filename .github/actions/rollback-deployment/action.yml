@@ -45,6 +45,7 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
+        passphrase: ${{ secrets.KEY_PASSPHRASE }}
         envs: CONTAINER_NAME,DEPLOY_PATH
         script: |
           echo "DEPLOYMENT FAILED - Initiating rollback..."
