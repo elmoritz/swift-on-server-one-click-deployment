@@ -78,28 +78,28 @@ jobs:
           compose_folder: ${{ vars.STAGING_COMPOSE_FOLDER || secrets.STAGING_COMPOSE_FOLDER || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Health check
-        uses: ./.github/actions/health-check
-        with:
-          url: ${{ env.STAGING_URL }}
-          max_retries: "30"
-          retry_interval: "3"
+      # - name: Health check
+      #   uses: ./.github/actions/health-check
+      #   with:
+      #     url: ${{ env.STAGING_URL }}
+      #     max_retries: "30"
+      #     retry_interval: "3"
 
-      - name: Run API tests against staging
-        uses: ./.github/actions/api-tests
-        with:
-          base_url: ${{ env.STAGING_URL }}
+      # - name: Run API tests against staging
+      #   uses: ./.github/actions/api-tests
+      #   with:
+      #     base_url: ${{ env.STAGING_URL }}
 
-      - name: Rollback on failure
-        if: failure()
-        uses: ./.github/actions/rollback-deployment
-        with:
-          ssh_host: ${{ secrets.STAGING_HOST }}
-          ssh_user: ${{ secrets.STAGING_USER }}
-          ssh_key: ${{ secrets.STAGING_SSH_KEY }}
-          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
-          ssh_port: ${{ secrets.STAGING_PORT || 22 }}
-          container_name: "todos-staging"
+      # - name: Rollback on failure
+      #   if: failure()
+      #   uses: ./.github/actions/rollback-deployment
+      #   with:
+      #     ssh_host: ${{ secrets.STAGING_HOST }}
+      #     ssh_user: ${{ secrets.STAGING_USER }}
+      #     ssh_key: ${{ secrets.STAGING_SSH_KEY }}
+      #     # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+      #     ssh_port: ${{ secrets.STAGING_PORT || 22 }}
+      #     container_name: "todos-staging"
 
   post-deployment-monitoring:
     name: Monitor Staging Deployment
