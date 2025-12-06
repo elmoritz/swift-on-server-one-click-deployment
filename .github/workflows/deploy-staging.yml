@@ -71,7 +71,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: "latest"
-          container_name: "todos-app"
+          container_name: "container-todos-staging"
           port: "10000:8080"
           compose_folder: ${{ env.STAGING_COMPOSE_FOLDER }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -97,7 +97,7 @@ jobs:
       #     ssh_key: ${{ secrets.STAGING_SSH_KEY }}
       #     # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
       #     ssh_port: ${{ secrets.STAGING_PORT || 22 }}
-      #     container_name: "todos-staging"
+      #     container_name: "container-todos-staging"
 
   post-deployment-monitoring:
     name: Monitor Staging Deployment
