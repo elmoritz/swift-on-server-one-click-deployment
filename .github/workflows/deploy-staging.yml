@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'todos-fluent/**'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - 'scripts/**'
-      - '.swiftlint.yml'
-      - '.github/workflows/deploy-staging.yml'
-      - '.github/actions/**'
+      - "todos-fluent/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "scripts/**"
+      - ".swiftlint.yml"
+      - ".github/workflows/deploy-staging.yml"
+      - ".github/actions/**"
   workflow_dispatch:
 
 env:
@@ -39,15 +39,26 @@ jobs:
         id: version
         uses: ./.github/actions/read-version
 
-      - name: Build and push Docker image
-        id: docker
+      - name: Build Docker image
+        id: docker-build
         uses: ./.github/actions/docker-build-push
         with:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ steps.version.outputs.version }}
-          tags: 'staging'
-          push: 'true'
+          tags: "staging"
+          push: "false"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        id: docker-push
+        uses: ./.github/actions/docker-build-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          version: ${{ steps.version.outputs.version }}
+          tags: "staging"
+          push: "true"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to staging server
@@ -60,8 +71,8 @@ jobs:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
           version: ${{ steps.version.outputs.version }}
-          container_name: 'todos-staging'
-          port: '8080:8080'
+          container_name: "todos-staging"
+          port: "10000:8080"
           compose_folder: ${{ vars.STAGING_COMPOSE_FOLDER || secrets.STAGING_COMPOSE_FOLDER || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -69,8 +80,8 @@ jobs:
         uses: ./.github/actions/health-check
         with:
           url: ${{ vars.STAGING_URL }}
-          max_retries: '30'
-          retry_interval: '3'
+          max_retries: "30"
+          retry_interval: "3"
 
       - name: Run API tests against staging
         uses: ./.github/actions/api-tests
@@ -85,7 +96,7 @@ jobs:
           ssh_user: ${{ secrets.STAGING_USER }}
           ssh_key: ${{ secrets.STAGING_SSH_KEY }}
           ssh_port: ${{ secrets.STAGING_PORT || 22 }}
-          container_name: 'todos-staging'
+          container_name: "todos-staging"
 
   post-deployment-monitoring:
     name: Monitor Staging Deployment
@@ -101,14 +112,14 @@ jobs:
         uses: ./.github/actions/extended-monitoring
         with:
           url: ${{ vars.STAGING_URL }}
-          duration_minutes: '5'
-          check_interval_seconds: '30'
-          max_consecutive_failures: '3'
+          duration_minutes: "5"
+          check_interval_seconds: "30"
+          max_consecutive_failures: "3"
 
       - name: Alert on monitoring failure
         if: failure()
         uses: ./.github/actions/deployment-notification
         with:
-          status: 'failure'
-          environment: 'staging'
-          message: 'WARNING: Staging health checks failed during monitoring period. Manual intervention may be required.'
+          status: "failure"
+          environment: "staging"
+          message: "WARNING: Staging health checks failed during monitoring period. Manual intervention may be required."
