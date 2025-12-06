@@ -16,7 +16,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  STAGING_URL: ${{ vars.STAGING_URL }}
 
 jobs:
   deploy-staging:
@@ -27,7 +28,7 @@ jobs:
       packages: write
     environment:
       name: staging
-      url: ${{ vars.STAGING_URL }}
+      url: ${{ env.STAGING_URL }}
 
     steps:
       - name: Checkout code
@@ -79,14 +80,14 @@ jobs:
       - name: Health check
         uses: ./.github/actions/health-check
         with:
-          url: ${{ vars.STAGING_URL }}
+          url: ${{ env.STAGING_URL }}
           max_retries: "30"
           retry_interval: "3"
 
       - name: Run API tests against staging
         uses: ./.github/actions/api-tests
         with:
-          base_url: ${{ vars.STAGING_URL }}
+          base_url: ${{ env.STAGING_URL }}
 
       - name: Rollback on failure
         if: failure()
@@ -111,7 +112,7 @@ jobs:
       - name: Monitor for 5 minutes
         uses: ./.github/actions/extended-monitoring
         with:
-          url: ${{ vars.STAGING_URL }}
+          url: ${{ env.STAGING_URL }}
           duration_minutes: "5"
           check_interval_seconds: "30"
           max_consecutive_failures: "3"
