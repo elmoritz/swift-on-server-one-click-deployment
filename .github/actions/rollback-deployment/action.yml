@@ -10,6 +10,9 @@ inputs:
   ssh_key:
     description: 'SSH private key'
     required: true
+  ssh_key_passphrase:
+    description: 'SSH private key passphrase'
+    required: false
   ssh_port:
     description: 'SSH port'
     required: false
@@ -45,7 +48,7 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        passphrase: ${{ secrets.KEY_PASSPHRASE }}
+        passphrase: ${{ inputs.ssh_key_passphrase || '' }}
         envs: CONTAINER_NAME,DEPLOY_PATH
         script: |
           echo "DEPLOYMENT FAILED - Initiating rollback..."

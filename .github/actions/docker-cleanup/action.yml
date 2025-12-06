@@ -1,26 +1,29 @@
-name: 'Docker Cleanup'
-description: 'Clean up old Docker containers and images via SSH'
+name: "Docker Cleanup"
+description: "Clean up old Docker containers and images via SSH"
 inputs:
   ssh_host:
-    description: 'SSH host'
+    description: "SSH host"
     required: true
   ssh_user:
-    description: 'SSH user'
+    description: "SSH user"
     required: true
   ssh_key:
-    description: 'SSH private key'
+    description: "SSH private key"
     required: true
-  ssh_port:
-    description: 'SSH port'
+  ssh_key_passphrase:
+    description: "SSH private key passphrase"
     required: false
-    default: '22'
+  ssh_port:
+    description: "SSH port"
+    required: false
+    default: "22"
   container_name:
-    description: 'Container name to remove (with -previous suffix)'
+    description: "Container name to remove (with -previous suffix)"
     required: true
   prune_images:
-    description: 'Whether to prune unused images'
+    description: "Whether to prune unused images"
     required: false
-    default: 'true'
+    default: "true"
 
 runs:
   using: "composite"
@@ -32,7 +35,7 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        passphrase: ${{ secrets.KEY_PASSPHRASE }}
+        passphrase: ${{ inputs.ssh_key_passphrase || '' }}
         script: |
           echo "========================================="
           echo "Docker Cleanup"
