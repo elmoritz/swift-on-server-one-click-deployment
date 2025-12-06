@@ -37,6 +37,10 @@ inputs:
     description: 'Deployment directory on server'
     required: false
     default: '/opt/todos-app'
+  compose_folder:
+    description: 'Folder containing docker-compose.yml (relative to deploy_path or absolute path)'
+    required: false
+    default: ''
 
 outputs:
   deployed_version:
@@ -67,6 +71,7 @@ runs:
         CONTAINER_NAME: ${{ inputs.container_name }}
         PORT_MAPPING: ${{ inputs.port }}
         DEPLOY_PATH: ${{ inputs.deploy_path }}
+        COMPOSE_FOLDER: ${{ inputs.compose_folder }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_ACTOR: ${{ github.actor }}
         REGISTRY: ${{ inputs.registry }}
@@ -75,7 +80,7 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
+        envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,COMPOSE_FOLDER,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
         script: |
           # Navigate to deployment directory
           cd $DEPLOY_PATH || mkdir -p $DEPLOY_PATH && cd $DEPLOY_PATH
@@ -83,40 +88,98 @@ runs:
           # Login to GitHub Container Registry
           echo "$GITHUB_TOKEN" | docker login $REGISTRY -u $GITHUB_ACTOR --password-stdin
 
-          # Pull latest image
-          echo "Pulling image: $IMAGE_TAG"
-          docker pull $IMAGE_TAG
+          # Determine if using Docker Compose or Docker run
+          if [ -n "$COMPOSE_FOLDER" ]; then
+            # Docker Compose deployment
+            echo "Using Docker Compose deployment"
 
-          # Backup current container
-          if docker ps -a | grep -q "$CONTAINER_NAME"; then
-            echo "Backing up current container..."
-            docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous || true
-            docker stop ${CONTAINER_NAME}-previous || true
+            # Determine compose file location
+            if [[ "$COMPOSE_FOLDER" = /* ]]; then
+              # Absolute path
+              COMPOSE_DIR="$COMPOSE_FOLDER"
+            else
+              # Relative path from DEPLOY_PATH
+              COMPOSE_DIR="$DEPLOY_PATH/$COMPOSE_FOLDER"
+            fi
+
+            if [ ! -d "$COMPOSE_DIR" ]; then
+              echo "Error: Compose folder not found: $COMPOSE_DIR"
+              exit 1
+            fi
+
+            if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
+              echo "Error: docker-compose.yml not found in: $COMPOSE_DIR"
+              exit 1
+            fi
+
+            echo "Compose directory: $COMPOSE_DIR"
+            cd "$COMPOSE_DIR"
+
+            # Backup database if exists
+            if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
+              BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
+              mkdir -p "$DEPLOY_PATH/data"
+              cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
+              echo "Database backed up to: $BACKUP_FILE"
+
+              # Keep only last 10 backups
+              ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+            fi
+
+            # Pull latest images
+            echo "Pulling images defined in docker-compose.yml..."
+            docker compose pull
+
+            # Stop and remove old containers
+            echo "Stopping existing services..."
+            docker compose down
+
+            # Start services with new image
+            echo "Starting services with Docker Compose..."
+            docker compose up -d
+
+            # Wait for services to start
+            sleep 10
+
+          else
+            # Docker run deployment (legacy mode)
+            echo "Using Docker run deployment"
+
+            # Pull latest image
+            echo "Pulling image: $IMAGE_TAG"
+            docker pull $IMAGE_TAG
+
+            # Backup current container
+            if docker ps -a | grep -q "$CONTAINER_NAME"; then
+              echo "Backing up current container..."
+              docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous || true
+              docker stop ${CONTAINER_NAME}-previous || true
+            fi
+
+            # Backup database if exists
+            if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
+              BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
+              cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
+              echo "Database backed up to: $BACKUP_FILE"
+
+              # Keep only last 10 backups
+              ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+            fi
+
+            # Start new container
+            echo "Starting new container: $CONTAINER_NAME"
+            docker run -d \
+              --name $CONTAINER_NAME \
+              --restart unless-stopped \
+              -p $PORT_MAPPING \
+              -v $DEPLOY_PATH/data:/app/data \
+              -e HOSTNAME=0.0.0.0 \
+              -e PORT=8080 \
+              $IMAGE_TAG
+
+            # Wait for container to start
+            sleep 10
           fi
-
-          # Backup database if exists
-          if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
-            BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
-            cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
-            echo "Database backed up to: $BACKUP_FILE"
-
-            # Keep only last 10 backups
-            ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
-          fi
-
-          # Start new container
-          echo "Starting new container: $CONTAINER_NAME"
-          docker run -d \
-            --name $CONTAINER_NAME \
-            --restart unless-stopped \
-            -p $PORT_MAPPING \
-            -v $DEPLOY_PATH/data:/app/data \
-            -e HOSTNAME=0.0.0.0 \
-            -e PORT=8080 \
-            $IMAGE_TAG
-
-          # Wait for container to start
-          sleep 10
 
           # Store deployment metadata
           echo "$VERSION" > $DEPLOY_PATH/current-version.txt

@@ -92,6 +92,28 @@ Add these variables in your repository settings under Variables:
 
 - `STAGING_URL` - Full URL to staging server (e.g., `http://staging.example.com:8080`)
 - `PRODUCTION_URL` - Full URL to production server (e.g., `https://api.example.com`)
+- `STAGING_COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on staging server
+- `PRODUCTION_COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on production server
+
+#### Docker Compose Deployment (Optional)
+
+If you want to use Docker Compose for deployment instead of `docker run`:
+
+1. Add the compose folder path to GitHub Variables or Secrets:
+   - **Variables** (recommended): `STAGING_COMPOSE_FOLDER`, `PRODUCTION_COMPOSE_FOLDER`
+   - **Secrets** (alternative): `STAGING_COMPOSE_FOLDER`, `PRODUCTION_COMPOSE_FOLDER`
+
+2. The folder path can be:
+   - **Relative path**: Relative to the deployment directory (e.g., `compose` → `/opt/todos-app/compose`)
+   - **Absolute path**: Full path starting with `/` (e.g., `/home/deploy/myapp`)
+
+3. The folder must contain a `docker-compose.yml` file
+
+**Example Values:**
+- `compose` - Looks for `/opt/todos-app/compose/docker-compose.yml`
+- `/home/deploy/myapp` - Looks for `/home/deploy/myapp/docker-compose.yml`
+
+**When NOT set:** The deployment uses the legacy `docker run` command (default behavior)
 
 ### 3. Set Up GitHub Environments
 
@@ -132,6 +154,44 @@ sudo usermod -aG docker $USER
 ```
 
 Log out and back in for group changes to take effect.
+
+#### Optional: Set Up Docker Compose Deployment
+
+If you want to use Docker Compose for deployment:
+
+```bash
+# Create compose folder (example using relative path 'compose')
+mkdir -p /opt/todos-app/compose
+
+# Copy your docker-compose.yml to the server
+# Either manually copy it or create it on the server
+cat > /opt/todos-app/compose/docker-compose.yml <<'EOF'
+version: '3.8'
+
+services:
+  todos-app:
+    image: ghcr.io/YOUR_USERNAME/YOUR_REPO:staging
+    container_name: hummingbird-todos
+    ports:
+      - "8080:8080"
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=8080
+      - DB_PATH=/app/data/db.sqlite
+    volumes:
+      - /opt/todos-app/data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+EOF
+
+# Set the STAGING_COMPOSE_FOLDER variable in GitHub to: compose
+# Set the PRODUCTION_COMPOSE_FOLDER variable in GitHub to: compose
+```
 
 ---
 
@@ -488,6 +548,20 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
   ```
 - Check migration logs
 - Restore from backup if needed
+
+#### 6. Docker Compose Folder Not Found
+
+**Symptom:** Deployment fails with "Compose folder not found" error
+
+**Solutions:**
+- Verify the compose folder exists on the server
+- Check if the path in `STAGING_COMPOSE_FOLDER`/`PRODUCTION_COMPOSE_FOLDER` is correct
+- If using relative path, ensure it's relative to `/opt/todos-app` (or your `deploy_path`)
+- Verify `docker-compose.yml` exists in the specified folder:
+  ```bash
+  ls -la /opt/todos-app/compose/docker-compose.yml
+  ```
+- Check folder permissions: `ls -ld /opt/todos-app/compose`
 
 ### Viewing Logs
 

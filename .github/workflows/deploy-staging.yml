@@ -59,6 +59,7 @@ jobs:
           version: ${{ steps.version.outputs.version }}
           container_name: 'todos-staging'
           port: '8080:8080'
+          compose_folder: ${{ vars.STAGING_COMPOSE_FOLDER || secrets.STAGING_COMPOSE_FOLDER || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Health check

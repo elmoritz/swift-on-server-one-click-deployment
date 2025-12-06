@@ -139,6 +139,7 @@ jobs:
           version: ${{ needs.create-release-version.outputs.version }}
           container_name: 'todos-production'
           port: '8080:8080'
+          compose_folder: ${{ vars.PRODUCTION_COMPOSE_FOLDER || secrets.PRODUCTION_COMPOSE_FOLDER || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Health check
