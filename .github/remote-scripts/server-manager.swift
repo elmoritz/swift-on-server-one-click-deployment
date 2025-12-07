@@ -59,9 +59,21 @@ func getEnv(_ key: String, default defaultValue: String = "") -> String {
     return ProcessInfo.processInfo.environment[key] ?? defaultValue
 }
 
+func showContent(in path: String) {
+    let content = try? FileManager.default.contentsOfDirectory(atPath: path)
+    guard let items = content else {
+        print("Could not read contents of directory: \(path)")
+        return
+    }
+    for item in items {
+        print("- \(item)")
+    }
+}
+
 func getComposeFilePath(composeFolder: String, deployPath: String) -> String? {
     let possibleComposeFileNames = ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"]
     for fileName in possibleComposeFileNames {
+        showContent(in: composeFolder)
         let fullPath: String
         if composeFolder.hasPrefix("/") {
             fullPath = "\(composeFolder)/\(fileName)"
