@@ -95,6 +95,7 @@ runs:
         script: |
           swiftly list
           swiftly link
+          pwd
 
           # Make script executable
           chmod +x ./server-manager.swift
