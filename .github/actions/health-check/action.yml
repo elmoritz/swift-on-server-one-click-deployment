@@ -29,25 +29,12 @@ runs:
       id: check
       shell: bash
       run: |
-        chmod +x scripts/health-check.sh
-
+        chmod +x scripts/health-check.swift
         FULL_URL="${{ inputs.url }}${{ inputs.endpoint }}"
 
-        echo "========================================="
-        echo "Health Check"
-        echo "========================================="
-        echo "URL: $FULL_URL"
-        echo "Max Retries: ${{ inputs.max_retries }}"
-        echo "Retry Interval: ${{ inputs.retry_interval }}s"
-        echo ""
-
-        if ./scripts/health-check.sh "${{ inputs.url }}" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"; then
+        if ./scripts/health-check.swift "$FULL_URL" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"; then
           echo "status=success" >> $GITHUB_OUTPUT
-          echo ""
-          echo "✅ Health check passed!"
         else
           echo "status=failure" >> $GITHUB_OUTPUT
-          echo ""
-          echo "❌ Health check failed!"
           exit 1
         fi

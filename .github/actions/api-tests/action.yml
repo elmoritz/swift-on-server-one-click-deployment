@@ -26,25 +26,4 @@ runs:
     - name: Run API tests
       id: run-tests
       shell: bash
-      run: |
-        chmod +x ${{ inputs.test_script }}
-
-        echo "========================================="
-        echo "API Integration Tests"
-        echo "========================================="
-        echo "Target: ${{ inputs.base_url }}"
-        echo "Script: ${{ inputs.test_script }}"
-        echo ""
-
-        # Run tests and capture output
-        if API_BASE_URL="${{ inputs.base_url }}" ${{ inputs.test_script }}; then
-          echo "result=success" >> $GITHUB_OUTPUT
-          echo ""
-          echo "✅ All API tests passed!"
-          exit 0
-        else
-          echo "result=failure" >> $GITHUB_OUTPUT
-          echo ""
-          echo "❌ API tests failed!"
-          exit 1
-        fi
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.base_url }}" "${{ inputs.test_script }}"

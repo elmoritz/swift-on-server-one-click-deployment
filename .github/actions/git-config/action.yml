@@ -15,7 +15,4 @@ runs:
   steps:
     - name: Configure Git
       shell: bash
-      run: |
-        git config user.name "${{ inputs.user_name }}"
-        git config user.email "${{ inputs.user_email }}"
-        echo "✅ Git configured as ${{ inputs.user_name }}"
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.user_name }}" "${{ inputs.user_email }}"

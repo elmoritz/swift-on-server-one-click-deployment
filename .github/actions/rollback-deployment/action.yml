@@ -38,6 +38,17 @@ runs:
         echo "Container: ${{ inputs.container_name }}"
         echo "========================================="
 
+    - name: Upload server-manager.swift to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        source: ".github/remote-scripts/server-manager.swift"
+        target: "${{ inputs.deploy_path }}/"
+        strip_components: 2
+
     - name: Execute rollback via SSH
       uses: appleboy/ssh-action@v1.2.4
       env:
@@ -48,32 +59,13 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        # passphrase: ${{ inputs.ssh_key_passphrase || '' }}
         envs: CONTAINER_NAME,DEPLOY_PATH
         script: |
-          echo "DEPLOYMENT FAILED - Initiating rollback..."
-          cd $DEPLOY_PATH
+          # Make script executable
+          chmod +x $DEPLOY_PATH/server-manager.swift
 
-          # Stop failed container
-          docker stop $CONTAINER_NAME || true
-          docker rm $CONTAINER_NAME || true
-
-          # Restore database backup
-          LATEST_BACKUP=$(ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | head -n1)
-          if [ -n "$LATEST_BACKUP" ]; then
-            cp "$LATEST_BACKUP" $DEPLOY_PATH/data/db.sqlite
-            echo "Database restored from backup: $LATEST_BACKUP"
-          fi
-
-          # Restart previous container
-          if docker ps -a | grep -q "${CONTAINER_NAME}-previous"; then
-            docker rename ${CONTAINER_NAME}-previous $CONTAINER_NAME
-            docker start $CONTAINER_NAME
-            echo "Rolled back to previous version"
-          else
-            echo "ERROR: No previous container found for rollback"
-            exit 1
-          fi
+          # Run rollback
+          $DEPLOY_PATH/server-manager.swift rollback
 
     - name: Rollback summary
       shell: bash

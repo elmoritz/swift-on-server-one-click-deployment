@@ -33,34 +33,6 @@ runs:
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
 
-    - name: Load image from tar
-      shell: bash
-      run: |
-        echo "Loading Docker image from /tmp/image.tar"
-        docker load --input /tmp/image.tar
-        echo "Image loaded successfully"
-        docker images
-
     - name: Push Docker image
       shell: bash
-      run: |
-        echo "Pushing images with tags: ${{ inputs.tags }}"
-
-        # Split tags and push each one
-        IFS=',' read -ra TAG_ARRAY <<< "${{ inputs.tags }}"
-        for tag in "${TAG_ARRAY[@]}"; do
-          tag=$(echo "$tag" | xargs)  # Trim whitespace
-          echo "Pushing: $tag"
-          docker push "$tag"
-        done
-
-    - name: Display push info
-      shell: bash
-      run: |
-        echo "========================================="
-        echo "Docker Push Complete"
-        echo "========================================="
-        echo "Registry: ${{ inputs.registry }}"
-        echo "Image: ${{ inputs.image_name }}"
-        echo "Tags pushed: ${{ inputs.tags }}"
-        echo "========================================="
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.registry }}" "${{ inputs.image_name }}" "${{ inputs.tags }}"

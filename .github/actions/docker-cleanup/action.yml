@@ -24,37 +24,40 @@ inputs:
     description: "Whether to prune unused images"
     required: false
     default: "true"
+  deploy_path:
+    description: "Deployment directory on server"
+    required: false
+    default: "/opt/todos-app"
 
 runs:
   using: "composite"
   steps:
-    - name: Remove old container and prune images
-      uses: appleboy/ssh-action@v1.2.4
+    - name: Upload server-manager.swift to server
+      uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ inputs.ssh_host }}
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        # passphrase: ${{ inputs.ssh_key_passphrase || '' }}
+        source: ".github/remote-scripts/server-manager.swift"
+        target: "${{ inputs.deploy_path }}/"
+        strip_components: 2
+
+    - name: Remove old container and prune images
+      uses: appleboy/ssh-action@v1.2.4
+      env:
+        CONTAINER_NAME: ${{ inputs.container_name }}
+        PRUNE_IMAGES: ${{ inputs.prune_images }}
+        DEPLOY_PATH: ${{ inputs.deploy_path }}
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        envs: CONTAINER_NAME,PRUNE_IMAGES,DEPLOY_PATH
         script: |
-          echo "========================================="
-          echo "Docker Cleanup"
-          echo "========================================="
+          # Make script executable
+          chmod +x $DEPLOY_PATH/server-manager.swift
 
-          # Remove old container
-          if docker ps -a | grep -q "${{ inputs.container_name }}-previous"; then
-            echo "Removing old container: ${{ inputs.container_name }}-previous"
-            docker rm ${{ inputs.container_name }}-previous || true
-            echo "✅ Old container removed"
-          else
-            echo "No old container found"
-          fi
-
-          # Prune images if requested
-          if [ "${{ inputs.prune_images }}" = "true" ]; then
-            echo "Pruning unused Docker images..."
-            docker image prune -f
-            echo "✅ Docker images pruned"
-          fi
-
-          echo "========================================="
+          # Run cleanup
+          $DEPLOY_PATH/server-manager.swift cleanup

@@ -46,35 +46,12 @@ runs:
     - name: Generate cache keys
       id: cache-keys
       shell: bash
-      run: |
-        # Generate hash of Package.resolved for dependency caching
-        DEPS_HASH=$(sha256sum todos-fluent/Package.resolved | cut -d' ' -f1 | cut -c1-12)
-        echo "deps-hash=${DEPS_HASH}" >> $GITHUB_OUTPUT
-
-        # Generate hash of source files for incremental builds
-        SOURCE_HASH=$(find todos-fluent/Sources -type f -name "*.swift" -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1 | cut -c1-12)
-        echo "source-hash=${SOURCE_HASH}" >> $GITHUB_OUTPUT
-
-        echo "Dependencies hash: ${DEPS_HASH}"
-        echo "Source code hash: ${SOURCE_HASH}"
+      run: chmod +x ${{ github.action_path }}/generate-cache-keys.swift && ${{ github.action_path }}/generate-cache-keys.swift
 
     - name: Prepare tags
       id: prepare-tags
       shell: bash
-      run: |
-        TAGS="${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}"
-
-        # Add additional tags if provided
-        if [ -n "${{ inputs.tags }}" ]; then
-          IFS=',' read -ra EXTRA_TAGS <<< "${{ inputs.tags }}"
-          for tag in "${EXTRA_TAGS[@]}"; do
-            tag=$(echo "$tag" | xargs)  # Trim whitespace
-            TAGS="$TAGS,${{ inputs.registry }}/${{ inputs.image_name }}:$tag"
-          done
-        fi
-
-        echo "tags=$TAGS" >> $GITHUB_OUTPUT
-        echo "Building with tags: $TAGS"
+      run: chmod +x ${{ github.action_path }}/prepare-tags.swift && ${{ github.action_path }}/prepare-tags.swift "${{ inputs.registry }}" "${{ inputs.image_name }}" "${{ inputs.version }}" "${{ inputs.tags }}"
 
     - name: Build Docker image
       id: build

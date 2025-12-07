@@ -23,7 +23,8 @@ runs:
       id: get-current
       shell: bash
       run: |
-        CURRENT_VERSION=$(cat VERSION)
+        chmod +x scripts/version-manager.swift
+        CURRENT_VERSION=$(./scripts/version-manager.swift get)
         echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "Current version: $CURRENT_VERSION"
 
@@ -31,27 +32,8 @@ runs:
       id: bump
       shell: bash
       run: |
-        chmod +x scripts/version-manager.sh
-
-        case "${{ inputs.version_type }}" in
-          build)
-            NEW_VERSION=$(./scripts/version-manager.sh build)
-            ;;
-          patch|bugfix)
-            NEW_VERSION=$(./scripts/version-manager.sh patch)
-            ;;
-          minor|feature)
-            NEW_VERSION=$(./scripts/version-manager.sh minor)
-            ;;
-          major|breaking)
-            NEW_VERSION=$(./scripts/version-manager.sh major)
-            ;;
-          *)
-            echo "ERROR: Invalid version type: ${{ inputs.version_type }}"
-            exit 1
-            ;;
-        esac
-
+        chmod +x scripts/version-manager.swift
+        NEW_VERSION=$(./scripts/version-manager.swift "${{ inputs.version_type }}" | tail -n 1)
         echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "Incremented version from ${{ steps.get-current.outputs.version }} to $NEW_VERSION"
 

@@ -36,32 +36,4 @@ runs:
     - name: Create and push tag
       id: tag
       shell: bash
-      run: |
-        TAG_NAME="${{ inputs.tag_prefix }}${{ inputs.version }}"
-        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-
-        echo "========================================="
-        echo "Git Tag and Push"
-        echo "========================================="
-        echo "Tag:     $TAG_NAME"
-        echo "Branch:  ${{ inputs.branch }}"
-        echo "Message: ${{ inputs.tag_message }} ${{ inputs.version }}"
-        echo "========================================="
-
-        # Create annotated tag
-        git tag -a "$TAG_NAME" -m "${{ inputs.tag_message }} ${{ inputs.version }}"
-        echo "✅ Tag created: $TAG_NAME"
-
-        # Push branch if requested
-        if [ "${{ inputs.push_branch }}" = "true" ]; then
-          git push origin ${{ inputs.branch }}
-          echo "✅ Pushed branch: ${{ inputs.branch }}"
-        fi
-
-        # Push tag if requested
-        if [ "${{ inputs.push_tag }}" = "true" ]; then
-          git push origin "$TAG_NAME"
-          echo "✅ Pushed tag: $TAG_NAME"
-        fi
-
-        echo "========================================="
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.version }}" "${{ inputs.branch }}" "${{ inputs.tag_prefix }}" "${{ inputs.tag_message }}" "${{ inputs.push_tag }}" "${{ inputs.push_branch }}"

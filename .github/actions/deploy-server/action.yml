@@ -66,6 +66,17 @@ runs:
         echo "Port: ${{ inputs.port }}"
         echo "========================================="
 
+    - name: Upload server-manager.swift to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ inputs.ssh_host }}
+        username: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        port: ${{ inputs.ssh_port }}
+        source: ".github/remote-scripts/server-manager.swift"
+        target: "${{ inputs.deploy_path }}/"
+        strip_components: 2
+
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1.2.4
       env:
@@ -83,123 +94,16 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
-        # passphrase: ${{ inputs.ssh_key_passphrase || '' }}
         envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,COMPOSE_FOLDER,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
         script: |
-          # Navigate to deployment directory
-          cd $DEPLOY_PATH || mkdir -p $DEPLOY_PATH && cd $DEPLOY_PATH
+          # Ensure deployment directory exists
+          mkdir -p $DEPLOY_PATH
 
-          # Login to GitHub Container Registry
-          echo "$GITHUB_TOKEN" | docker login $REGISTRY -u $GITHUB_ACTOR --password-stdin
+          # Make script executable
+          chmod +x $DEPLOY_PATH/server-manager.swift
 
-          # Determine if using Docker Compose or Docker run
-          if [ -n "$COMPOSE_FOLDER" ]; then
-            # Docker Compose deployment
-            echo "Using Docker Compose deployment"
-
-            # Determine compose file location
-            if [[ "$COMPOSE_FOLDER" = /* ]]; then
-              # Absolute path
-              COMPOSE_DIR="$COMPOSE_FOLDER"
-            else
-              # Relative path from DEPLOY_PATH
-              COMPOSE_DIR="$DEPLOY_PATH/$COMPOSE_FOLDER"
-            fi
-
-            if [ ! -d "$COMPOSE_DIR" ]; then
-              echo "Error: Compose folder not found: $COMPOSE_DIR"
-              exit 1
-            fi
-
-            if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
-              echo "Error: docker-compose.yml not found in: $COMPOSE_DIR"
-              exit 1
-            fi
-
-            echo "Compose directory: $COMPOSE_DIR"
-            cd "$COMPOSE_DIR"
-
-            # Backup database if exists
-            if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
-              BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
-              mkdir -p "$DEPLOY_PATH/data"
-              cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
-              echo "Database backed up to: $BACKUP_FILE"
-
-              # Keep only last 10 backups
-              ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
-            fi
-
-            # Pull latest images
-            echo "Pulling images defined in docker-compose.yml..."
-            docker compose pull
-
-            # Stop and remove old containers
-            echo "Stopping existing services..."
-            docker compose down
-
-            # Start services with new image
-            echo "Starting services with Docker Compose..."
-            docker compose up -d
-
-            # Wait for services to start
-            sleep 10
-
-          else
-            # Docker run deployment (legacy mode)
-            echo "Using Docker run deployment"
-
-            # Pull latest image
-            echo "Pulling image: $IMAGE_TAG"
-            docker pull $IMAGE_TAG
-
-            # Clean up old backup containers first
-            if docker ps -a | grep -q "${CONTAINER_NAME}-previous"; then
-              echo "Removing old backup container..."
-              docker stop ${CONTAINER_NAME}-previous 2>/dev/null || true
-              docker rm ${CONTAINER_NAME}-previous 2>/dev/null || true
-            fi
-
-            # Stop and backup current container
-            if docker ps -a | grep -q "^${CONTAINER_NAME}$" || docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-              echo "Backing up current container..."
-              docker stop $CONTAINER_NAME 2>/dev/null || true
-              docker rename $CONTAINER_NAME ${CONTAINER_NAME}-previous 2>/dev/null || true
-            fi
-
-            # Backup database if exists
-            if [ -f $DEPLOY_PATH/data/db.sqlite ]; then
-              BACKUP_FILE="$DEPLOY_PATH/data/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)"
-              cp $DEPLOY_PATH/data/db.sqlite $BACKUP_FILE
-              echo "Database backed up to: $BACKUP_FILE"
-
-              # Keep only last 10 backups
-              ls -t $DEPLOY_PATH/data/db.sqlite.backup.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
-            fi
-
-            # Start new container
-            echo "Starting new container: $CONTAINER_NAME"
-            docker run -d \
-              --name $CONTAINER_NAME \
-              --restart unless-stopped \
-              -p $PORT_MAPPING \
-              -v $DEPLOY_PATH/data:/app/data \
-              -e HOSTNAME=0.0.0.0 \
-              -e PORT=8080 \
-              $IMAGE_TAG
-
-            # Wait for container to start
-            sleep 10
-          fi
-
-          # Store deployment metadata (with error handling)
-          echo "$VERSION" > $DEPLOY_PATH/current-version.txt 2>/dev/null || echo "Warning: Could not write version metadata (permission denied)"
-          echo "$(date -Iseconds)" > $DEPLOY_PATH/last-deployment.txt 2>/dev/null || echo "Warning: Could not write deployment timestamp (permission denied)"
-
-          # Clean up old images
-          docker image prune -f
-
-          echo "Deployment complete!"
+          # Run deployment
+          $DEPLOY_PATH/server-manager.swift deploy
 
     - name: Deployment summary
       shell: bash

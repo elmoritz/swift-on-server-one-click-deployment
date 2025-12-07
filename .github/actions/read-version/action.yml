@@ -17,18 +17,4 @@ runs:
     - name: Read version from file
       id: read
       shell: bash
-      run: |
-        if [ ! -f "${{ inputs.version_file }}" ]; then
-          echo "ERROR: VERSION file not found at ${{ inputs.version_file }}"
-          exit 1
-        fi
-
-        VERSION=$(cat ${{ inputs.version_file }})
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-        echo "========================================="
-        echo "Version Information"
-        echo "========================================="
-        echo "Version: $VERSION"
-        echo "Source:  ${{ inputs.version_file }}"
-        echo "========================================="
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.version_file }}"
