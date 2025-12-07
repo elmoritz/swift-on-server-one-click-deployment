@@ -85,17 +85,18 @@ jobs:
           compose_folder: ${{ env.COMPOSE_FOLDER }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Health check
-      #   uses: ./.github/actions/health-check
-      #   with:
-      #     url: ${{ env.DEPLOYMENT_URL }}
-      #     max_retries: "30"
-      #     retry_interval: "3"
+      - name: Health check
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ env.DEPLOYMENT_URL }}
+          max_retries: "30"
+          retry_interval: "3"
+          endpoint: "api/status/health"
 
-      # - name: Run API tests against staging
-      #   uses: ./.github/actions/api-tests
-      #   with:
-      #     base_url: ${{ env.DEPLOYMENT_URL }}
+      - name: Run API tests against staging
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: ${{ env.DEPLOYMENT_URL }}
 
       # - name: Rollback on failure
       #   if: failure()
