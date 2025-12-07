@@ -12,6 +12,7 @@ on:
       - ".swiftlint.yml"
       - ".github/workflows/deploy-staging.yml"
       - ".github/actions/**"
+      - ".github/remote-scripts/**"
   workflow_dispatch:
 
 env:
