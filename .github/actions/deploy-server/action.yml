@@ -1,49 +1,49 @@
-name: 'Deploy to Server'
-description: 'Deploy Docker container to remote server via SSH'
+name: "Deploy to Server"
+description: "Deploy Docker container to remote server via SSH"
 inputs:
   ssh_host:
-    description: 'SSH host address'
+    description: "SSH host address"
     required: true
   ssh_user:
-    description: 'SSH username'
+    description: "SSH username"
     required: true
   ssh_key:
-    description: 'SSH private key'
+    description: "SSH private key"
     required: true
   # ssh_key_passphrase:
   #   description: 'SSH private key passphrase'
   #   required: false
   ssh_port:
-    description: 'SSH port'
+    description: "SSH port"
     required: false
-    default: '22'
+    default: "22"
   registry:
-    description: 'Container registry URL'
+    description: "Container registry URL"
     required: true
   image_name:
-    description: 'Docker image name'
+    description: "Docker image name"
     required: true
   version:
-    description: 'Version tag to deploy'
+    description: "Version tag to deploy"
     required: true
   container_name:
-    description: 'Name for the container'
+    description: "Name for the container"
     required: true
   port:
-    description: 'Port mapping (host:container)'
+    description: "Port mapping (host:container)"
     required: false
-    default: '8080:8080'
+    default: "8080:8080"
   github_token:
-    description: 'GitHub token for registry authentication'
+    description: "GitHub token for registry authentication"
     required: true
   compose_folder:
-    description: 'Folder containing docker-compose.yml (relative to deploy_path or absolute path)'
+    description: "Folder containing docker-compose.yml (relative to deploy_path or absolute path)"
     required: false
-    default: ''
+    default: ""
 
 outputs:
   deployed_version:
-    description: 'The version that was deployed'
+    description: "The version that was deployed"
     value: ${{ inputs.version }}
 
 runs:
@@ -93,6 +93,9 @@ runs:
         target: "~/"
         envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,COMPOSE_FOLDER,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
         script: |
+          swiftly list
+          swiftly link
+
           # Make script executable
           chmod +x ./server-manager.swift
 
