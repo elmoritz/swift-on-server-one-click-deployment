@@ -1,96 +1,78 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the Hummingbird server framework project
-//
-// Copyright (c) 2021-2021 the Hummingbird authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-// See hummingbird/CONTRIBUTORS.txt for the list of Hummingbird authors
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-
-import FluentKit
 import Foundation
 import Hummingbird
-import HummingbirdFluent
-import NIO
 
-struct TodoController<Context: RequestContext> {
-    let fluent: Fluent
+struct TodoController<Repository: TodoRepository> {
+    // Todo repository
+    let repository: Repository
 
-    func addRoutes(to group: RouterGroup<Context>) {
-        group
-            .get(use: self.list)
+    // return todo endpoints
+    var endpoints: RouteCollection<AppRequestContext> {
+        return RouteCollection(context: AppRequestContext.self)
             .get(":id", use: self.get)
+            .get(use: self.list)
             .post(use: self.create)
             .patch(":id", use: self.update)
-            .delete(":id", use: self.deleteId)
+            .delete(":id", use: self.delete)
+            .delete(use: self.deleteAll)
     }
 
-    @Sendable func list(_ request: Request, context: Context) async throws -> [Todo] {
-        try await Todo.query(on: self.fluent.db()).all()
+    /// Delete all todos entrypoint
+    @Sendable func deleteAll(request: Request, context: some RequestContext) async throws -> HTTPResponse.Status {
+        try await self.repository.deleteAll()
+        return .ok
     }
 
-    struct CreateTodoRequest: ResponseCodable {
-        var title: String
-    }
-
-    /// Create new todo
-    @Sendable func create(_ request: Request, context: Context) async throws -> EditedResponse<Todo> {
-        let todoRequest = try await request.decode(as: CreateTodoRequest.self, context: context)
-        guard let host = request.head.authority else { throw HTTPError(.badRequest, message: "No host header") }
-        let todo = Todo(title: todoRequest.title)
-        let db = self.fluent.db()
-        _ = try await todo.save(on: db)
-        todo.completed = false
-        todo.url = "http://\(host)/api/todos/\(todo.id!)"
-        try await todo.update(on: db)
-        return .init(status: .created, response: todo)
-    }
-
-    /// Get todo
-    @Sendable func get(_ request: Request, context: Context) async throws -> Todo? {
+    /// Delete todo entrypoint
+    @Sendable func delete(request: Request, context: some RequestContext) async throws -> HTTPResponse.Status {
         let id = try context.parameters.require("id", as: UUID.self)
-        return try await Todo.query(on: self.fluent.db())
-            .filter(\.$id == id)
-            .first()
-    }
-
-    struct EditTodoRequest: ResponseCodable {
-        var title: String?
-        var completed: Bool?
-    }
-
-    /// Edit todo
-    @Sendable func update(_ request: Request, context: Context) async throws -> Todo {
-        let id = try context.parameters.require("id", as: UUID.self)
-        let editTodo = try await request.decode(as: EditTodoRequest.self, context: context)
-        let db = self.fluent.db()
-        guard let todo = try await Todo.query(on: db)
-            .filter(\.$id == id)
-            .first()
-        else {
-            throw HTTPError(.notFound)
+        if try await self.repository.delete(id: id) {
+            return .ok
+        } else {
+            return .badRequest
         }
-        todo.update(title: editTodo.title, completed: editTodo.completed)
-        try await todo.update(on: db)
+    }
+
+    struct UpdateRequest: Decodable {
+        let title: String?
+        let order: Int?
+        let completed: Bool?
+    }
+
+    /// Update todo entrypoint
+    @Sendable func update(request: Request, context: some RequestContext) async throws -> Todo? {
+        let id = try context.parameters.require("id", as: UUID.self)
+        let request = try await request.decode(as: UpdateRequest.self, context: context)
+        guard let todo = try await self.repository.update(
+            id: id,
+            title: request.title,
+            order: request.order,
+            completed: request.completed
+        ) else {
+            throw HTTPError(.badRequest)
+        }
         return todo
     }
 
-    /// delete todo
-    @Sendable func deleteId(_ request: Request, context: Context) async throws -> HTTPResponse.Status {
+    /// Get todo entrypoint
+    @Sendable func get(request: Request, context: some RequestContext) async throws -> Todo? {
         let id = try context.parameters.require("id", as: UUID.self)
-        let db = self.fluent.db()
-        guard let todo = try await Todo.query(on: db)
-            .filter(\.$id == id)
-            .first()
-        else {
-            throw HTTPError(.notFound)
-        }
-        try await todo.delete(on: db)
-        return .ok
+        return try await self.repository.get(id: id)
+    }
+
+    /// Get list of todos entrypoint
+    @Sendable func list(request: Request, context: some RequestContext) async throws -> [Todo] {
+        return try await self.repository.list()
+    }
+
+    struct CreateRequest: Decodable {
+        let title: String
+        let order: Int?
+    }
+
+    /// Create todo entrypoint
+    @Sendable func create(request: Request, context: some RequestContext) async throws -> EditedResponse<Todo> {
+        let request = try await request.decode(as: CreateRequest.self, context: context)
+        let todo = try await self.repository.create(title: request.title, order: request.order, urlPrefix: "http://localhost:8080/todos/")
+        return EditedResponse(status: .created, response: todo)
     }
 }

@@ -1,61 +1,77 @@
-import FluentSQLiteDriver
-import Foundation
 import Hummingbird
-import HummingbirdFluent
+import Logging
+import PostgresNIO
 
+/// Application arguments protocol. We use a protocol so we can call
+/// `buildApplication` inside Tests as well as in the App executable.
+/// Any variables added here also have to be added to `App` in App.swift and
+/// `TestArguments` in AppTest.swift
 public protocol AppArguments {
-    var inMemoryDatabase: Bool { get }
-    var migrate: Bool { get }
-    var revert: Bool { get }
     var hostname: String { get }
     var port: Int { get }
+    var logLevel: Logger.Level? { get }
+    var inMemoryTesting: Bool { get }
 }
 
-func buildApplication(_ arguments: some AppArguments) async throws -> some ApplicationProtocol {
-    let logger = Logger(label: "todos-fluent")
-    let fluent = Fluent(logger: logger)
-    // add sqlite database
-    if arguments.inMemoryDatabase {
-        fluent.databases.use(.sqlite(.memory), as: .sqlite)
+// Request context used by application
+typealias AppRequestContext = BasicRequestContext
+
+///  Build application
+/// - Parameter arguments: application arguments
+public func buildApplication(_ arguments: some AppArguments) async throws -> some ApplicationProtocol {
+    let environment = Environment()
+    let logger = {
+        var logger = Logger(label: "todos-postgres-tutorial")
+        logger.logLevel =
+            arguments.logLevel ??
+            environment.get("LOG_LEVEL").map { Logger.Level(rawValue: $0) ?? .info } ??
+            .info
+        return logger
+    }()
+    var postgresRepository: TodoPostgresRepository?
+    let router: Router<AppRequestContext>
+    if !arguments.inMemoryTesting {
+        let client = PostgresClient(
+            configuration: .init(host: "localhost", username: "todos", password: "todos", database: "hummingbird", tls: .disable),
+            backgroundLogger: logger
+        )
+        let repository = TodoPostgresRepository(client: client, logger: logger)
+        postgresRepository = repository
+        router = buildRouter(repository)
     } else {
-        fluent.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
+        router = buildRouter(TodoMemoryRepository())
     }
-    // add migrations
-    await fluent.migrations.add(CreateTodo())
-
-    let fluentPersist = await FluentPersistDriver(fluent: fluent)
-    // revert
-    if arguments.revert {
-        try await fluent.revert()
-    }
-    // migrate
-    if arguments.migrate || arguments.inMemoryDatabase {
-        try await fluent.migrate()
-    }
-    // router
-    let router = Router()
-
-    // add logging middleware
-    router.add(middleware: LogRequestsMiddleware(.info))
-    // add file middleware to server css and js files
-    router.add(middleware: FileMiddleware(logger: logger))
-    router.add(middleware: CORSMiddleware(
-        allowOrigin: .originBased,
-        allowHeaders: [.contentType],
-        allowMethods: [.get, .options, .post, .delete, .patch]
-    ))
-    // Add api routes managing todos
-    TodoController<BasicRequestContext>(fluent: fluent)
-        .addRoutes(to: router.group("api/todos"))
-
-    // Add status routes (health and version)
-    StatusController<BasicRequestContext>(fluent: fluent)
-        .addRoutes(to: router.group("api/status"))
-
     var app = Application(
         router: router,
-        configuration: .init(address: .hostname(arguments.hostname, port: arguments.port))
+        configuration: .init(
+            address: .hostname(arguments.hostname, port: arguments.port),
+            serverName: "todos-postgres-tutorial"
+        ),
+        logger: logger
     )
-    app.addServices(fluent, fluentPersist)
+    // if we setup a postgres service then add as a service and run createTable before
+    // server starts
+    if let postgresRepository {
+        app.addServices(postgresRepository.client)
+        app.beforeServerStarts {
+            try await postgresRepository.createTable()
+        }
+    }
     return app
+}
+
+/// Build router
+func buildRouter(_ repository: some TodoRepository) -> Router<AppRequestContext> {
+    let router = Router(context: AppRequestContext.self)
+    // Add middleware
+    router.addMiddleware {
+        // logging middleware
+        LogRequestsMiddleware(.info)
+    }
+    // Add health endpoint
+    router.get("/health") { _, _ -> HTTPResponse.Status in
+        return .ok
+    }
+    router.addRoutes(TodoController(repository: repository).endpoints, atPath: "/todos")
+    return router
 }
