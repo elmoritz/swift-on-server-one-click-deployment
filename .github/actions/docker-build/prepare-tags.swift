@@ -2,7 +2,7 @@
 import Foundation
 
 // MARK: - Argument Parsing
-guard CommandLine.arguments.count == 4 else {
+guard CommandLine.arguments.count >= 4 else {
     print("Usage: \(CommandLine.arguments[0]) <registry> <image_name> <version> [additional_tags]")
     exit(1)
 }
