@@ -58,11 +58,15 @@ struct StatusController<Context: RequestContext> {
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let overallStatus = databaseHealth.connected ? "healthy" : "unhealthy"
 
-        return HealthResponse(
+        let response = HealthResponse(
             status: overallStatus,
             database: databaseHealth,
             timestamp: timestamp
         )
+
+        print(response)
+
+        return response
     }
 
     struct VersionResponse: ResponseCodable {
