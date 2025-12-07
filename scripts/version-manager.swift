@@ -2,7 +2,7 @@
 import Foundation
 
 // MARK: - Constants
-let versionFile = "VERSION"
+let tagPattern = "^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
 
 // MARK: - Helper Functions
 func printInfo(_ message: String) {
@@ -28,33 +28,50 @@ func exitWithError(_ message: String) -> Never {
     exit(1)
 }
 
-// MARK: - Version Management
-func initVersion() {
-    if !FileManager.default.fileExists(atPath: versionFile) {
-        do {
-            try "0.1.0.1".write(toFile: versionFile, atomically: true, encoding: .utf8)
-            printSuccess("Initialized version file with 0.1.0.1")
-        } catch {
-            exitWithError("Failed to initialize version file: \(error)")
-        }
+// MARK: - Shell Helper
+func shellOutput(_ command: String) -> String {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/bin/bash")
+    task.arguments = ["-c", command]
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.standardError = Pipe()
+
+    do {
+        try task.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
+        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    } catch {
+        return ""
     }
 }
 
-func readVersion() -> String {
-    initVersion()
+func runCommand(_ command: String) -> Bool {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/bin/bash")
+    task.arguments = ["-c", command]
 
     do {
-        return try String(contentsOfFile: versionFile, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        try task.run()
+        task.waitUntilExit()
+        return task.terminationStatus == 0
     } catch {
-        exitWithError("Failed to read version file: \(error)")
+        return false
     }
+}
+
+// MARK: - Version Management
+func getLatestTag() -> String {
+    let tag = shellOutput("git tag --sort=-creatordate | grep -E '\(tagPattern)' | head -n1 || true")
+    return tag.isEmpty ? "0.1.0.1" : tag
 }
 
 func parseVersion(_ version: String) -> [Int] {
-    let components = version.split(separator: ".").compactMap { Int($0) }
-    guard components.count == 4 else {
-        exitWithError("Invalid version format: \(version). Expected MAJOR.MINOR.PATCH.BUILD")
+    let parts = version.split(separator: ".").compactMap { Int($0) }
+    var components = parts
+    while components.count < 4 {
+        components.append(components.count == 3 ? 1 : 0)
     }
     return components
 }
@@ -63,59 +80,42 @@ func formatVersion(_ components: [Int]) -> String {
     return components.map(String.init).joined(separator: ".")
 }
 
-func writeVersion(_ version: String) {
-    do {
-        try version.write(toFile: versionFile, atomically: true, encoding: .utf8)
-        printSuccess("Version updated to: \(version)")
-    } catch {
-        exitWithError("Failed to write version file: \(error)")
-    }
-}
-
 func incrementBuild() -> String {
-    let current = readVersion()
+    let current = getLatestTag()
     var components = parseVersion(current)
     components[3] += 1
-    let newVersion = formatVersion(components)
-    writeVersion(newVersion)
-    return newVersion
+    return formatVersion(components)
 }
 
 func incrementPatch() -> String {
-    let current = readVersion()
+    let current = getLatestTag()
     var components = parseVersion(current)
     components[2] += 1
-    components[3] = 1  // Reset build number
-    let newVersion = formatVersion(components)
-    writeVersion(newVersion)
-    return newVersion
+    components[3] = 1
+    return formatVersion(components)
 }
 
 func incrementMinor() -> String {
-    let current = readVersion()
+    let current = getLatestTag()
     var components = parseVersion(current)
     components[1] += 1
-    components[2] = 0  // Reset patch
-    components[3] = 1  // Reset build number
-    let newVersion = formatVersion(components)
-    writeVersion(newVersion)
-    return newVersion
+    components[2] = 0
+    components[3] = 1
+    return formatVersion(components)
 }
 
 func incrementMajor() -> String {
-    let current = readVersion()
+    let current = getLatestTag()
     var components = parseVersion(current)
     components[0] += 1
-    components[1] = 0  // Reset minor
-    components[2] = 0  // Reset patch
-    components[3] = 1  // Reset build number
-    let newVersion = formatVersion(components)
-    writeVersion(newVersion)
-    return newVersion
+    components[1] = 0
+    components[2] = 0
+    components[3] = 1
+    return formatVersion(components)
 }
 
 func showVersion() {
-    let version = readVersion()
+    let version = getLatestTag()
     let components = parseVersion(version)
 
     print("========================================")
@@ -127,49 +127,29 @@ func showVersion() {
     print("Patch:        \(components[2])")
     print("Build:        \(components[3])")
     print("========================================")
+    print("")
+    print("Version source: Git tags")
+    print("========================================")
 }
 
-func createTag(message: String? = nil) {
-    let version = readVersion()
-    let tagName = "v\(version)"
+func createTag(version: String, message: String? = nil) {
+    let tagName = version
     let tagMessage = message ?? "Release version \(version)"
 
     // Check if tag already exists
-    let checkProcess = Process()
-    checkProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-    checkProcess.arguments = ["rev-parse", tagName]
-    checkProcess.standardOutput = Pipe()
-    checkProcess.standardError = Pipe()
-
-    do {
-        try checkProcess.run()
-        checkProcess.waitUntilExit()
-
-        if checkProcess.terminationStatus == 0 {
-            printWarning("Tag \(tagName) already exists")
-            exit(1)
-        }
-    } catch {
-        // Tag doesn't exist, continue
+    let tagExists = shellOutput("git rev-parse \(tagName) 2>/dev/null")
+    if !tagExists.isEmpty {
+        printWarning("Tag \(tagName) already exists")
+        exit(1)
     }
 
     // Create tag
-    let tagProcess = Process()
-    tagProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-    tagProcess.arguments = ["tag", "-a", tagName, "-m", tagMessage]
-
-    do {
-        try tagProcess.run()
-        tagProcess.waitUntilExit()
-
-        if tagProcess.terminationStatus == 0 {
-            printSuccess("Created tag: \(tagName)")
-            printInfo("To push the tag, run: git push origin \(tagName)")
-        } else {
-            exitWithError("Failed to create tag")
-        }
-    } catch {
-        exitWithError("Failed to create tag: \(error)")
+    let command = "git tag -a \(tagName) -m '\(tagMessage)'"
+    if runCommand(command) {
+        printSuccess("Created tag: \(tagName)")
+        printInfo("To push the tag, run: git push origin \(tagName)")
+    } else {
+        exitWithError("Failed to create tag")
     }
 }
 
@@ -178,27 +158,31 @@ func printUsage() {
     Usage: version-manager.swift <command> [options]
 
     Commands:
-      show                    Show current version
-      build                   Increment build number (0.1.0.1 -> 0.1.0.2)
-      patch|bugfix           Increment patch version (0.1.0.5 -> 0.1.1.1)
-      minor|feature          Increment minor version (0.1.5.3 -> 0.2.0.1)
-      major|breaking         Increment major version (1.2.3.4 -> 2.0.0.1)
-      tag [message]          Create git tag for current version
-      get                    Get current version (output only)
+      show                    Show current version from git tags
+      build                   Calculate next build number (0.1.0.1 -> 0.1.0.2)
+      patch|bugfix           Calculate next patch version (0.1.0.5 -> 0.1.1.1)
+      minor|feature          Calculate next minor version (0.1.5.3 -> 0.2.0.1)
+      major|breaking         Calculate next major version (1.2.3.4 -> 2.0.0.1)
+      tag <version> [message] Create git tag for specific version
+      get                    Get current version from git tags (output only)
 
     Examples:
       version-manager.swift show                           # Display version info
-      version-manager.swift build                          # Increment build number
-      version-manager.swift patch                          # Create bugfix version
-      version-manager.swift minor                          # Create feature version
-      version-manager.swift major                          # Create breaking change version
-      version-manager.swift tag 'Release notes here'       # Tag current version
+      version-manager.swift build                          # Calculate next build
+      version-manager.swift patch                          # Calculate next patch
+      version-manager.swift minor                          # Calculate next minor
+      version-manager.swift major                          # Calculate next major
+      version-manager.swift tag 1.2.3.4 'Release notes'   # Create specific tag
+      version-manager.swift get                            # Get current version
 
     Version Format: MAJOR.MINOR.PATCH.BUILD
       MAJOR - Incompatible API changes
       MINOR - Add functionality (backwards compatible)
       PATCH - Bug fixes (backwards compatible)
       BUILD - Build/commit number (auto-incremented)
+
+    Note: This version uses GIT TAGS as the source of truth.
+          No VERSION file is used or modified.
     """)
 }
 
@@ -210,38 +194,40 @@ guard CommandLine.arguments.count >= 2 else {
 
 let command = CommandLine.arguments[1].lowercased()
 
-initVersion()
-
 switch command {
 case "show":
     showVersion()
 
 case "build":
     let newVersion = incrementBuild()
-    printSuccess("Build number incremented")
+    printSuccess("Next build version calculated")
     print(newVersion)
 
 case "patch", "bugfix":
     let newVersion = incrementPatch()
-    printSuccess("Patch version incremented (bugfix)")
+    printSuccess("Next patch version calculated")
     print(newVersion)
 
 case "minor", "feature":
     let newVersion = incrementMinor()
-    printSuccess("Minor version incremented (new feature)")
+    printSuccess("Next minor version calculated")
     print(newVersion)
 
 case "major", "breaking":
     let newVersion = incrementMajor()
-    printSuccess("Major version incremented (breaking change)")
+    printSuccess("Next major version calculated")
     print(newVersion)
 
 case "tag":
-    let message = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : nil
-    createTag(message: message)
+    guard CommandLine.arguments.count >= 3 else {
+        exitWithError("Usage: version-manager.swift tag <version> [message]")
+    }
+    let version = CommandLine.arguments[2]
+    let message = CommandLine.arguments.count > 3 ? CommandLine.arguments[3] : nil
+    createTag(version: version, message: message)
 
 case "get":
-    print(readVersion())
+    print(getLatestTag())
 
 default:
     printError("Unknown command: \(command)")

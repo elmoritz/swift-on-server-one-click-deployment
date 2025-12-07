@@ -1,0 +1,29 @@
+name: "Get Version from Git Tags"
+description: "Get current version from git tags and calculate next release version"
+
+inputs:
+  release-type:
+    description: "Should be one of the following: major, minor, patch, build"
+    required: true
+    default: "build"
+
+outputs:
+  release-version:
+    description: "Calculated next release version"
+    value: ${{ steps.release-version.outputs.release }}
+  current-version:
+    description: "Current version from git tags"
+    value: ${{ steps.release-version.outputs.current }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout with full history
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Calculate next release version
+      id: release-version
+      shell: bash
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.release-type }}"

@@ -1,0 +1,22 @@
+name: "Create Release Branch"
+description: "Create staging and production release branches for a new version"
+
+inputs:
+  version:
+    description: "Version number for the release (e.g., 1.2.3)"
+    required: true
+  create_staging_branch:
+    description: "Whether to create a staging release branch"
+    required: false
+    default: 'true'
+  create_production_branch:
+    description: "Whether to create a production release branch"
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create release branches
+      shell: bash
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.version }}" "${{ inputs.create_staging_branch }}" "${{ inputs.create_production_branch }}"

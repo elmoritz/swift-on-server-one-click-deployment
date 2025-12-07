@@ -109,13 +109,16 @@ jobs:
         uses: ./.github/actions/version-increment
         with:
           version_type: 'build'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Commit version file
-        run: |
-          git add VERSION
-          git commit -m "chore: increment build number to ${{ steps.increment.outputs.version }} [skip ci]"
-          git push
+      - name: Create and push git tag
+        uses: ./.github/actions/git-tag-push
+        with:
+          version: ${{ steps.increment.outputs.version }}
+          branch: 'main'
+          tag_prefix: ''
+          tag_message: 'Build version'
+          push_tag: 'true'
+          push_branch: 'false'
 
   build-docker:
     name: Build Docker Image
@@ -130,10 +133,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
-      - name: Get version
+      - name: Get version from git tags (4-part staging version)
         id: version
-        uses: ./.github/actions/read-version
+        uses: ./.github/actions/get-version
+        with:
+          release-type: 'build'
+
+      - name: Set version in app code
+        uses: ./.github/actions/set-app-version
+        with:
+          version: ${{ steps.version.outputs.release-version }}
+          environment: 'staging'
 
       - name: Build Docker image
         id: docker-build
@@ -141,7 +153,7 @@ jobs:
         with:
           registry: 'ghcr.io'
           image_name: ${{ github.repository }}
-          version: ${{ steps.version.outputs.version }}
+          version: ${{ steps.version.outputs.release-version }}
           tags: 'latest'
           github_token: ${{ secrets.GITHUB_TOKEN }}
 

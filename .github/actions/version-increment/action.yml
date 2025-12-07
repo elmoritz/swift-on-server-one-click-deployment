@@ -1,41 +1,32 @@
 name: 'Increment Version'
-description: 'Increment semantic version based on type (build, patch, minor, major)'
+description: 'Increment semantic version based on git tags (build, patch, minor, major)'
 inputs:
   version_type:
     description: 'Type of version increment (build, patch, minor, major)'
     required: true
     default: 'build'
-  github_token:
-    description: 'GitHub token for committing version changes'
-    required: true
+
 outputs:
   version:
     description: 'The new version number'
-    value: ${{ steps.bump.outputs.version }}
+    value: ${{ steps.calculate.outputs.release-version }}
   previous_version:
     description: 'The previous version number'
-    value: ${{ steps.get-current.outputs.version }}
+    value: ${{ steps.calculate.outputs.current-version }}
 
 runs:
   using: "composite"
   steps:
-    - name: Get current version
-      id: get-current
-      shell: bash
-      run: |
-        chmod +x scripts/version-manager.swift
-        CURRENT_VERSION=$(./scripts/version-manager.swift get)
-        echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-        echo "Current version: $CURRENT_VERSION"
+    - name: Checkout with full git history
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - name: Increment version
-      id: bump
-      shell: bash
-      run: |
-        chmod +x scripts/version-manager.swift
-        NEW_VERSION=$(./scripts/version-manager.swift "${{ inputs.version_type }}" | tail -n 1)
-        echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "Incremented version from ${{ steps.get-current.outputs.version }} to $NEW_VERSION"
+    - name: Calculate version
+      id: calculate
+      uses: ./.github/actions/get-version
+      with:
+        release-type: ${{ inputs.version_type }}
 
     - name: Display version change
       shell: bash
@@ -44,6 +35,6 @@ runs:
         echo "Version Update"
         echo "========================================="
         echo "Type:     ${{ inputs.version_type }}"
-        echo "Previous: ${{ steps.get-current.outputs.version }}"
-        echo "New:      ${{ steps.bump.outputs.version }}"
+        echo "Previous: ${{ steps.calculate.outputs.current-version }}"
+        echo "New:      ${{ steps.calculate.outputs.release-version }}"
         echo "========================================="

@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Hummingbird Todos Application
 # Stage 1: Dependencies - Cache Swift package dependencies
-FROM swift:5.9 as dependencies
+FROM swift:5.9 AS dependencies
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN swift package reset
 RUN swift package resolve
 
 # Stage 2: Builder - Build the application
-FROM swift:5.9 as builder
+FROM swift:5.9 AS builder
 
 WORKDIR /app
 

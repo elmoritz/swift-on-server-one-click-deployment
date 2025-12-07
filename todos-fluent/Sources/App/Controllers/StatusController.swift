@@ -68,36 +68,21 @@ struct StatusController<Context: RequestContext> {
     struct VersionResponse: ResponseCodable {
         var version: String
         var buildDate: String
+        var environment: String
     }
 
-    /// Version endpoint - returns the application version from VERSION file
+    /// Version endpoint - returns the hardcoded application version
     @Sendable func version(_ request: Request, context: Context) async throws -> VersionResponse {
-        // Read version from VERSION file (single source of truth)
-        let versionString = try await Self.readVersion()
-        let buildDate = ISO8601DateFormatter().string(from: Date())
+        // Version is hardcoded and set during build process
+        let versionString = AppVersion.current
+        let buildDate = AppVersion.buildDate
+        let environment = AppVersion.environment
 
         return VersionResponse(
             version: versionString,
-            buildDate: buildDate
+            buildDate: buildDate,
+            environment: environment
         )
     }
-
-    /// Read version string from VERSION file
-    private static func readVersion() async throws -> String {
-        // Try multiple possible locations for the VERSION file
-        let possiblePaths = [
-            "../../../VERSION",  // When running from build directory
-            "VERSION",           // When running from project root
-            "../../VERSION"      // Alternative build location
-        ]
-
-        for path in possiblePaths {
-            if let version = try? String(contentsOfFile: path, encoding: .utf8) {
-                return version.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-        }
-
-        // Fallback: try to read from embedded resource if available
-        throw HTTPError(.internalServerError, message: "VERSION file not found")
-    }
 }
+
