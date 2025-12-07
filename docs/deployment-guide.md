@@ -74,15 +74,15 @@ Navigate to your GitHub repository settings and add the following secrets:
 
 #### Staging Environment Secrets
 
-- `STAGING_HOST` - Staging server IP or hostname
+- `SSH_HOST` - Staging server IP or hostname
 - `STAGING_USER` - SSH username for staging server
 - `STAGING_SSH_KEY` - Private SSH key for staging server authentication
 - `STAGING_PORT` - SSH port (default: 22, optional)
 
 #### Production Environment Secrets
 
-- `PRODUCTION_HOST` - Production server IP or hostname
-- `PRODUCTION_USER` - SSH username for production server
+- `SSH_HOST` - Production server IP or hostname
+- `SSH_USER` - SSH username for production server
 - `PRODUCTION_SSH_KEY` - Private SSH key for production server authentication
 - `PRODUCTION_PORT` - SSH port (default: 22, optional)
 
@@ -100,16 +100,19 @@ Add these variables in your repository settings under Variables:
 If you want to use Docker Compose for deployment instead of `docker run`:
 
 1. Add the compose folder path to GitHub Variables or Secrets:
+
    - **Variables** (recommended): `COMPOSE_FOLDER`
    - **Secrets** (alternative): `COMPOSE_FOLDER`
 
 2. The folder path can be:
+
    - **Relative path**: Relative to the deployment directory (e.g., `compose` → `/opt/todos-app/compose`)
    - **Absolute path**: Full path starting with `/` (e.g., `/home/deploy/myapp`)
 
 3. The folder must contain a `docker-compose.yml` file
 
 **Example Values:**
+
 - `compose` - Looks for `/opt/todos-app/compose/docker-compose.yml`
 - `/home/deploy/myapp` - Looks for `/home/deploy/myapp/docker-compose.yml`
 
@@ -318,6 +321,7 @@ Staging deployment happens automatically when source code changes are pushed to 
 **Triggers:**
 
 The deployment only runs when changes are made to:
+
 - Swift source code (`todos-fluent/**`)
 - Docker configuration (`Dockerfile`, `docker-compose.yml`)
 - Deployment scripts (`scripts/**`)
@@ -372,6 +376,7 @@ Production deployment requires manual triggering via GitHub Actions.
 **GitHub Release:**
 
 Each production deployment automatically creates a GitHub Release with:
+
 - Auto-generated changelog based on commits
 - Version information and deployment details
 - Custom release notes (if provided)
@@ -391,11 +396,13 @@ Each production deployment automatically creates a GitHub Release with:
 **Release Branches:**
 
 Every successful production deployment creates a permanent release branch:
+
 - Format: `release/vX.Y.Z`
 - Created only after successful deployment
 - Serves as a snapshot of deployed code
 
 These branches can be used for:
+
 - Emergency hotfixes
 - Rollback reference
 - Audit trail of production releases
@@ -502,6 +509,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** CI pipeline fails during Docker build
 
 **Solutions:**
+
 - Check Swift version compatibility in Dockerfile
 - Verify all dependencies in Package.swift
 - Check Docker build logs in GitHub Actions
@@ -511,6 +519,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** Deployment fails with health check timeout
 
 **Solutions:**
+
 - Verify the `/health` endpoint is working
 - Check container logs: `docker logs todos-staging`
 - Increase health check timeout in workflows
@@ -521,6 +530,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** Deployment fails to connect to server
 
 **Solutions:**
+
 - Verify SSH key is correct in GitHub Secrets
 - Check server firewall allows SSH (port 22)
 - Test SSH connection manually: `ssh -i key.pem user@host`
@@ -531,6 +541,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** Integration tests fail in pipeline
 
 **Solutions:**
+
 - Run tests locally: `./tests/api/api-tests.sh`
 - Check if database migrations are applied
 - Verify test data expectations
@@ -541,6 +552,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** Application starts but database queries fail
 
 **Solutions:**
+
 - Run migrations manually:
   ```bash
   docker exec todos-production /app/todos-server --migrate
@@ -553,6 +565,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 **Symptom:** Deployment fails with "Compose folder not found" error
 
 **Solutions:**
+
 - Verify the compose folder exists on the server
 - Check if the path in `COMPOSE_FOLDER` is correct
 - If using relative path, ensure it's relative to `/opt/todos-app` (or your `deploy_path`)
@@ -565,6 +578,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 ### Viewing Logs
 
 **Container Logs:**
+
 ```bash
 # On server
 docker logs todos-staging -f
@@ -572,6 +586,7 @@ docker logs todos-production -f
 ```
 
 **GitHub Actions Logs:**
+
 - Navigate to Actions tab in your repository
 - Click on the workflow run
 - View detailed logs for each step

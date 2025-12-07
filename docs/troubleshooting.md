@@ -32,6 +32,7 @@ This guide covers common issues you might encounter and how to resolve them. Iss
 ### Issue: "SwiftLint job failed"
 
 **Symptoms:**
+
 ```
 Error: SwiftLint found 3 violations with severity 'error'
 todos-fluent/Sources/App/Controllers/TodoController.swift:45: error: Line Length
@@ -62,7 +63,7 @@ swiftlint
 
 ```yaml
 disabled_rules:
-  - line_length  # If you want longer lines
+  - line_length # If you want longer lines
 ```
 
 ---
@@ -70,12 +71,14 @@ disabled_rules:
 ### Issue: "Unit tests failing in CI but pass locally"
 
 **Symptoms:**
+
 ```
 ❌ Test failed: testTodoCreation
 Expected: 201, Got: 500
 ```
 
 **Causes:**
+
 1. **Environment differences** (different Swift version)
 2. **Missing environment variables**
 3. **File path issues**
@@ -108,6 +111,7 @@ swift test --enable-code-coverage
 ### Issue: "Docker build fails in CI with 'No space left on device'"
 
 **Symptoms:**
+
 ```
 Error: failed to copy: write /var/lib/docker/...: no space left on device
 ```
@@ -139,18 +143,19 @@ Add cleanup step before building:
 **Possible Causes:**
 
 **1. Branch filter doesn't match**
+
 ```yaml
 # Workflow says:
 on:
   push:
     branches: [main, develop]
-
 # But you pushed to: feature/add-endpoint
 ```
 
 **Solution:** Either push to `main`/`develop`, or add your branch to the filter
 
 **2. [skip ci] in commit message**
+
 ```bash
 git commit -m "chore: update docs [skip ci]"
 ```
@@ -160,6 +165,7 @@ git commit -m "chore: update docs [skip ci]"
 **3. Workflow file has syntax errors**
 
 **Solution:**
+
 ```bash
 # Validate YAML syntax
 cat .github/workflows/ci.yml | python3 -c 'import sys, yaml; yaml.safe_load(sys.stdin)'
@@ -170,6 +176,7 @@ cat .github/workflows/ci.yml | python3 -c 'import sys, yaml; yaml.safe_load(sys.
 ### Issue: "Workflow permission denied errors"
 
 **Symptoms:**
+
 ```
 Error: Resource not accessible by integration
 ```
@@ -182,8 +189,8 @@ Add to workflow file:
 
 ```yaml
 permissions:
-  contents: write        # For pushing commits/tags
-  packages: write        # For pushing Docker images
+  contents: write # For pushing commits/tags
+  packages: write # For pushing Docker images
   security-events: write # For uploading security scan results
 ```
 
@@ -211,6 +218,7 @@ permissions:
 **Solutions:**
 
 **1. Verify Package.resolved exists and is committed**
+
 ```bash
 git status todos-fluent/Package.resolved
 # Should NOT say "Untracked" or "Deleted"
@@ -223,6 +231,7 @@ git commit -m "Add Package.resolved for caching"
 ```
 
 **2. Check registry permissions**
+
 ```yaml
 # Ensure you're logged into the registry
 - name: Log in to GitHub Container Registry
@@ -234,6 +243,7 @@ git commit -m "Add Package.resolved for caching"
 ```
 
 **3. Verify cache images exist**
+
 ```bash
 # Check if cache images are in registry
 docker manifest inspect ghcr.io/YOUR_USERNAME/repo:builder-cache-latest
@@ -244,6 +254,7 @@ docker manifest inspect ghcr.io/YOUR_USERNAME/repo:builder-cache-latest
 ### Issue: "Multi-stage Docker build fails at dependencies stage"
 
 **Symptoms:**
+
 ```
 Error: Package.swift:5: error: no such module 'Hummingbird'
 ```
@@ -253,18 +264,21 @@ Error: Package.swift:5: error: no such module 'Hummingbird'
 **Solution:**
 
 **1. Check Package.swift syntax**
+
 ```bash
 cd todos-fluent
 swift package describe
 ```
 
 **2. Update dependencies**
+
 ```bash
 swift package update
 swift package resolve
 ```
 
-**3. Verify Dockerfile copies Package.* correctly**
+**3. Verify Dockerfile copies Package.\* correctly**
+
 ```dockerfile
 # Should be:
 COPY todos-fluent/Package.* ./
@@ -274,6 +288,7 @@ COPY Package.* ./  # Wrong path!
 ```
 
 **4. Check Swift version in Dockerfile matches Package.swift**
+
 ```dockerfile
 # Dockerfile
 FROM swift:5.9 as dependencies
@@ -287,6 +302,7 @@ FROM swift:5.9 as dependencies
 ### Issue: "Docker build fails with 'could not read username'"
 
 **Symptoms:**
+
 ```
 Error response from daemon: Get "https://ghcr.io/v2/": could not read Username
 ```
@@ -312,6 +328,7 @@ Error response from daemon: Get "https://ghcr.io/v2/": could not read Username
 ### Issue: "Deployment fails with 'Permission denied (publickey)'"
 
 **Symptoms:**
+
 ```
 Permission denied (publickey).
 fatal: Could not read from remote repository.
@@ -322,10 +339,12 @@ fatal: Could not read from remote repository.
 **Solution:**
 
 **1. Verify SSH key is added to GitHub secrets**
+
 - Go to repository Settings → Secrets → Actions
 - Check that `STAGING_SSH_KEY` or `PRODUCTION_SSH_KEY` exists
 
 **2. Test SSH connection manually**
+
 ```bash
 # Add your key
 ssh-add ~/.ssh/your_key
@@ -337,21 +356,24 @@ ssh user@your-server-ip
 ```
 
 **3. Ensure secret contains the PRIVATE key**
+
 ```
 -----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAA...
 -----END OPENSSH PRIVATE KEY-----
 ```
 
-**NOT** the public key (*.pub)
+**NOT** the public key (\*.pub)
 
 **4. Check key format**
+
 ```bash
 # If you have an RSA key in old format, convert it
 ssh-keygen -p -f ~/.ssh/id_rsa -m PEM
 ```
 
 **5. Verify server has the PUBLIC key**
+
 ```bash
 # On the server
 cat ~/.ssh/authorized_keys
@@ -388,6 +410,7 @@ docker logs todos-staging  # or todos-production
 **Solutions:**
 
 **For "port already in use":**
+
 ```bash
 # Find process using port 8080
 lsof -i :8080
@@ -398,6 +421,7 @@ docker rm todos-staging
 ```
 
 **For database permission issues:**
+
 ```bash
 # Check file permissions
 ls -la /path/to/data/
@@ -407,6 +431,7 @@ chown -R 1000:1000 /path/to/data/
 ```
 
 **For missing environment variables:**
+
 ```yaml
 # In deploy-server action, ensure env vars are passed
 - name: Deploy
@@ -425,6 +450,7 @@ chown -R 1000:1000 /path/to/data/
 **Symptoms:** Deployment completes, but accessing the URL returns 502 Bad Gateway
 
 **Causes:**
+
 1. Application crashed after deployment
 2. Application listening on wrong interface
 3. Reverse proxy misconfigured
@@ -456,6 +482,7 @@ curl http://localhost:8080/health
 **Solutions:**
 
 **If app listening on 127.0.0.1 only:**
+
 ```swift
 // Application+build.swift
 // Change from:
@@ -466,6 +493,7 @@ curl http://localhost:8080/health
 ```
 
 **If reverse proxy issue:**
+
 ```nginx
 # Check nginx config (example)
 location / {
@@ -482,6 +510,7 @@ location / {
 ### Issue: "Health check endpoint returns 404"
 
 **Symptoms:**
+
 ```
 ✗ Health check failed: HTTP 404 Not Found
 URL: https://staging.example.com/health
@@ -524,6 +553,7 @@ func addRoutes(to group: RouterGroup<some RequestContext>) {
 ### Issue: "Health check times out"
 
 **Symptoms:**
+
 ```
 ✗ Health check failed: Connection timeout
 Retrying... (1/30)
@@ -532,6 +562,7 @@ Retrying... (2/30)
 ```
 
 **Causes:**
+
 1. Application not running
 2. Firewall blocking connection
 3. Application crashed
@@ -557,6 +588,7 @@ docker logs todos-staging --tail 50
 **Solutions:**
 
 **Container not running:**
+
 ```bash
 # Start it manually
 docker start todos-staging
@@ -566,6 +598,7 @@ docker logs todos-staging
 ```
 
 **Firewall issue:**
+
 ```bash
 # Allow port (if not using reverse proxy)
 sudo ufw allow 8080
@@ -581,6 +614,7 @@ sudo ufw allow 'Nginx Full'
 ### Issue: "Version increment job fails with 'rejected non-fast-forward'"
 
 **Symptoms:**
+
 ```
 ! [rejected] main -> main (non-fast-forward)
 error: failed to push some refs to 'https://github.com/...'
@@ -593,6 +627,7 @@ error: failed to push some refs to 'https://github.com/...'
 This is a race condition. Two workflows tried to commit at the same time.
 
 **Quick fix:**
+
 ```bash
 # Re-run the workflow from GitHub Actions UI
 # Usually succeeds on second try
@@ -630,7 +665,7 @@ build-docker:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: main  # Important: use main, not PR branch
+        ref: main # Important: use main, not PR branch
 ```
 
 ---
@@ -638,6 +673,7 @@ build-docker:
 ### Issue: "Git tag already exists"
 
 **Symptoms:**
+
 ```
 fatal: tag 'v0.1.1' already exists
 ```
@@ -647,12 +683,14 @@ fatal: tag 'v0.1.1' already exists
 **Solution:**
 
 **Option 1: Delete and recreate tag (if not pushed)**
+
 ```bash
 git tag -d v0.1.1
 git push origin :refs/tags/v0.1.1
 ```
 
 **Option 2: Increment version again**
+
 ```bash
 # Use version-manager script
 ./scripts/version-manager.sh patch
@@ -660,6 +698,7 @@ git push origin :refs/tags/v0.1.1
 ```
 
 **Option 3: Skip tag creation** (if you just want to redeploy)
+
 ```bash
 # Manually deploy the existing version
 ./scripts/deploy.sh production
@@ -672,11 +711,13 @@ git push origin :refs/tags/v0.1.1
 ### Issue: "SSH connection times out"
 
 **Symptoms:**
+
 ```
 ssh: connect to host 203.0.113.10 port 22: Connection timed out
 ```
 
 **Causes:**
+
 1. Firewall blocking SSH
 2. Wrong IP address
 3. Server is down
@@ -697,23 +738,26 @@ ssh -vvv user@your-server-ip
 **Solutions:**
 
 **Firewall issue:**
+
 ```bash
 # On server, allow SSH
 sudo ufw allow 22
 ```
 
 **Wrong IP:**
+
 ```bash
 # Verify IP in GitHub secrets
-# Settings → Secrets → STAGING_HOST or PRODUCTION_HOST
+# Settings → Secrets → SSH_HOST or SSH_HOST
 ```
 
 **Custom SSH port:**
+
 ```yaml
 # If using non-standard port (e.g., 2222)
 - uses: ./.github/actions/deploy-server
   with:
-    ssh_port: 2222  # Add this
+    ssh_port: 2222 # Add this
 ```
 
 ---
@@ -721,6 +765,7 @@ sudo ufw allow 22
 ### Issue: "Host key verification failed"
 
 **Symptoms:**
+
 ```
 Host key verification failed.
 fatal: Could not read from remote repository.
@@ -737,7 +782,7 @@ Add server to known_hosts:
 - name: Add server to known hosts
   run: |
     mkdir -p ~/.ssh
-    ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+    ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 ```
 
 **Or:** Disable strict host key checking (less secure):
@@ -757,6 +802,7 @@ Add server to known_hosts:
 ### Issue: "Database file not found"
 
 **Symptoms:**
+
 ```
 Error: Failed to open database: /data/todos.db: no such file or directory
 ```
@@ -786,6 +832,7 @@ docker exec todos-staging /app/.build/release/App migrate
 ### Issue: "Database backup fails"
 
 **Symptoms:**
+
 ```
 Error: cp: cannot stat '/data/todos.db': No such file or directory
 ```
@@ -811,6 +858,7 @@ fi
 ### Issue: "Migration fails: table already exists"
 
 **Symptoms:**
+
 ```
 Error: table 'todos' already exists
 Migration failed
@@ -831,6 +879,7 @@ docker exec todos-staging /app/.build/release/App migrate --revert
 ```
 
 **Correct approach:**
+
 - Migrations should be idempotent
 - Create new migration for new changes
 - Don't modify existing migrations
@@ -842,6 +891,7 @@ docker exec todos-staging /app/.build/release/App migrate --revert
 ### Issue: "Application crashes with 'signal: killed'"
 
 **Symptoms:**
+
 ```
 docker logs todos-production
 # Output:
@@ -853,12 +903,14 @@ signal: killed
 **Solution:**
 
 **1. Check memory usage:**
+
 ```bash
 docker stats todos-production
 # Look at MEM USAGE %
 ```
 
 **2. Increase container memory limit:**
+
 ```bash
 docker run -d \
   --memory="512m" \  # Add memory limit
@@ -867,6 +919,7 @@ docker run -d \
 ```
 
 **3. Find memory leaks:**
+
 ```bash
 # Monitor over time
 watch -n 5 'docker stats --no-stream todos-production'
@@ -879,6 +932,7 @@ watch -n 5 'docker stats --no-stream todos-production'
 **Symptoms:** Requests take 5+ seconds instead of <100ms
 
 **Possible Causes:**
+
 1. Debug mode instead of release mode
 2. Database not indexed
 3. N+1 query problem
@@ -901,12 +955,14 @@ docker stats todos-production
 **Solutions:**
 
 **Ensure release build:**
+
 ```dockerfile
 # In Dockerfile
 RUN swift build -c release  # Not debug!
 ```
 
 **Add database indexes:**
+
 ```swift
 // In migration
 struct CreateTodo: AsyncMigration {
@@ -932,6 +988,7 @@ struct CreateTodo: AsyncMigration {
 ### Issue: "Automatic rollback fails"
 
 **Symptoms:**
+
 ```
 Error: Rollback failed - old container not found
 ```
@@ -1079,21 +1136,25 @@ docker system prune -a
 If you can't find your issue here:
 
 1. **Check the specific documentation:**
+
    - [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment details
    - [VERSIONING.md](VERSIONING.md) - Version management
    - [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) - Docker caching
 
 2. **Review workflow logs carefully:**
+
    - GitHub Actions tab → Click workflow run → Expand failed step
    - Look for the **first** error message (not subsequent failures)
 
 3. **Test individual components:**
+
    - Test SSH connection
    - Test Docker build locally
    - Test health endpoint
    - Test database connection
 
 4. **Check GitHub Actions documentation:**
+
    - [GitHub Actions Docs](https://docs.github.com/en/actions)
    - [Workflow Syntax](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
 
@@ -1104,6 +1165,7 @@ If you can't find your issue here:
 ---
 
 **Remember:** Most issues are caused by:
+
 - Configuration mistakes (typos in secrets, wrong paths)
 - Permission problems (SSH keys, file permissions)
 - Networking issues (firewall, wrong IP/port)

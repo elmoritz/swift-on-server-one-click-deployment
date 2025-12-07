@@ -5,6 +5,7 @@ Quick guide to run and deploy this Swift server application with automated CI/CD
 ## What This Is
 
 A production-ready **Todo API** (Hummingbird + Fluent) with complete CI/CD pipeline demonstrating:
+
 - Automated testing and deployment via GitHub Actions
 - Docker containerization
 - Staging → Production workflow with auto-rollback
@@ -13,17 +14,20 @@ A production-ready **Todo API** (Hummingbird + Fluent) with complete CI/CD pipel
 ## Quick Start (Local)
 
 ### Run with Docker
+
 ```bash
 docker-compose up --build
 ```
 
 ### Run with Swift
+
 ```bash
 cd todos-fluent
 swift run App
 ```
 
 ### Test the API
+
 ```bash
 # Health check
 curl http://localhost:8080/health
@@ -38,6 +42,7 @@ curl http://localhost:8080/api/todos
 ```
 
 ### Run Tests
+
 ```bash
 # Unit tests
 cd todos-fluent && swift test
@@ -49,6 +54,7 @@ cd todos-fluent && swift test
 ## CI/CD Pipeline
 
 **When you push to `main`:**
+
 1. **CI runs**: SwiftLint → Tests → Docker build → Security scan
 2. **Auto-deploys to staging**: Health checks + monitoring
 3. **Manual approval for production**: Version bump + blue-green deployment
@@ -56,21 +62,26 @@ cd todos-fluent && swift test
 ## Setup Deployment
 
 ### 1. Configure GitHub Secrets
+
 Go to Settings → Secrets and variables → Actions:
 
 **Required Secrets:**
-- `STAGING_HOST`, `STAGING_USER`, `STAGING_SSH_KEY`
-- `PRODUCTION_HOST`, `PRODUCTION_USER`, `PRODUCTION_SSH_KEY`
+
+- `SSH_HOST`, `STAGING_USER`, `STAGING_SSH_KEY`
+- `SSH_HOST`, `SSH_USER`, `PRODUCTION_SSH_KEY`
 
 **Required Variables:**
+
 - `DEPLOYMENT_URL`
 
 ### 2. Deploy to Staging
+
 ```bash
 git push origin main  # Auto-deploys to staging
 ```
 
 ### 3. Deploy to Production
+
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
@@ -107,14 +118,14 @@ git push origin v1.0.0
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/todos` | List all todos |
-| POST | `/api/todos` | Create todo |
-| GET | `/api/todos/:id` | Get specific todo |
-| PATCH | `/api/todos/:id` | Update todo |
-| DELETE | `/api/todos/:id` | Delete todo |
+| Method | Endpoint         | Description       |
+| ------ | ---------------- | ----------------- |
+| GET    | `/health`        | Health check      |
+| GET    | `/api/todos`     | List all todos    |
+| POST   | `/api/todos`     | Create todo       |
+| GET    | `/api/todos/:id` | Get specific todo |
+| PATCH  | `/api/todos/:id` | Update todo       |
+| DELETE | `/api/todos/:id` | Delete todo       |
 
 ## Learn More
 

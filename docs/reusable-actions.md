@@ -33,20 +33,23 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Increment semantic version based on type (build, patch, minor, major)
 
 **Inputs**:
+
 - `version_type` (required): Type of increment - `build`, `patch`, `minor`, `major`
 - `github_token` (required): GitHub token for committing changes
 
 **Outputs**:
+
 - `version`: The new version number
 - `previous_version`: The previous version number
 
 **Example Usage**:
+
 ```yaml
 - name: Increment build number
   id: bump
   uses: ./.github/actions/version-increment
   with:
-    version_type: 'build'
+    version_type: "build"
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
 - name: Use new version
@@ -62,6 +65,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Build Docker image and push to container registry
 
 **Inputs**:
+
 - `registry` (required): Container registry URL (default: `ghcr.io`)
 - `image_name` (required): Docker image name
 - `version` (required): Version tag for the image
@@ -70,19 +74,21 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 - `github_token` (required): GitHub token for registry authentication
 
 **Outputs**:
+
 - `image_tag`: Full image tag that was built
 - `digest`: Image digest
 
 **Example Usage**:
+
 ```yaml
 - name: Build and push Docker image
   uses: ./.github/actions/docker-build-push
   with:
-    registry: 'ghcr.io'
+    registry: "ghcr.io"
     image_name: ${{ github.repository }}
-    version: '1.2.3.4'
-    tags: 'latest,production'
-    push: 'true'
+    version: "1.2.3.4"
+    tags: "latest,production"
+    push: "true"
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -95,22 +101,25 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Perform health check on application endpoint with retries
 
 **Inputs**:
+
 - `url` (required): Base URL of the application
 - `max_retries` (optional): Maximum retry attempts (default: `30`)
 - `retry_interval` (optional): Interval between retries in seconds (default: `2`)
 - `endpoint` (optional): Health check endpoint path (default: `/health`)
 
 **Outputs**:
+
 - `status`: Health check status (`success`/`failure`)
 
 **Example Usage**:
+
 ```yaml
 - name: Health check
   uses: ./.github/actions/health-check
   with:
-    url: 'https://api.example.com'
-    max_retries: '30'
-    retry_interval: '3'
+    url: "https://api.example.com"
+    max_retries: "30"
+    retry_interval: "3"
 ```
 
 ---
@@ -122,18 +131,21 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Execute API integration test suite against application
 
 **Inputs**:
+
 - `base_url` (required): Base URL of the application to test
 - `test_script` (optional): Path to test script (default: `tests/api/api-tests.sh`)
 
 **Outputs**:
+
 - `result`: Test result (`success`/`failure`)
 
 **Example Usage**:
+
 ```yaml
 - name: Run API tests
   uses: ./.github/actions/api-tests
   with:
-    base_url: 'https://staging.example.com'
+    base_url: "https://staging.example.com"
 ```
 
 ---
@@ -145,6 +157,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Deploy Docker container to remote server via SSH
 
 **Inputs**:
+
 - `ssh_host` (required): SSH host address
 - `ssh_user` (required): SSH username
 - `ssh_key` (required): SSH private key
@@ -158,24 +171,27 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 - `deploy_path` (optional): Deployment directory (default: `/opt/todos-app`)
 
 **Outputs**:
+
 - `deployed_version`: The version that was deployed
 
 **Example Usage**:
+
 ```yaml
 - name: Deploy to staging
   uses: ./.github/actions/deploy-server
   with:
-    ssh_host: ${{ secrets.STAGING_HOST }}
+    ssh_host: ${{ secrets.SSH_HOST }}
     ssh_user: ${{ secrets.STAGING_USER }}
     ssh_key: ${{ secrets.STAGING_SSH_KEY }}
-    registry: 'ghcr.io'
+    registry: "ghcr.io"
     image_name: ${{ github.repository }}
-    version: '1.2.3.4'
-    container_name: 'todos-staging'
+    version: "1.2.3.4"
+    container_name: "todos-staging"
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 **What it does**:
+
 1. Logs in to container registry
 2. Pulls the specified image version
 3. Backs up current container (renames to `*-previous`)
@@ -193,6 +209,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 **Purpose**: Rollback to previous container version on server
 
 **Inputs**:
+
 - `ssh_host` (required): SSH host address
 - `ssh_user` (required): SSH username
 - `ssh_key` (required): SSH private key
@@ -201,18 +218,20 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 - `deploy_path` (optional): Deployment directory (default: `/opt/todos-app`)
 
 **Example Usage**:
+
 ```yaml
 - name: Rollback on failure
   if: failure()
   uses: ./.github/actions/rollback-deployment
   with:
-    ssh_host: ${{ secrets.PRODUCTION_HOST }}
-    ssh_user: ${{ secrets.PRODUCTION_USER }}
+    ssh_host: ${{ secrets.SSH_HOST }}
+    ssh_user: ${{ secrets.SSH_USER }}
     ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
-    container_name: 'todos-production'
+    container_name: "todos-production"
 ```
 
 **What it does**:
+
 1. Stops and removes failed container
 2. Restores database from latest backup
 3. Renames previous container back to original name
@@ -230,7 +249,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 - name: Deploy to staging server
   uses: appleboy/ssh-action@v1.2.4
   with:
-    host: ${{ secrets.STAGING_HOST }}
+    host: ${{ secrets.SSH_HOST }}
     username: ${{ secrets.STAGING_USER }}
     # ... 50+ lines of deployment script
 ```
@@ -243,7 +262,7 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 - name: Deploy to staging server
   uses: ./.github/actions/deploy-server
   with:
-    ssh_host: ${{ secrets.STAGING_HOST }}
+    ssh_host: ${{ secrets.SSH_HOST }}
     ssh_user: ${{ secrets.STAGING_USER }}
     # ... just configuration
 ```
@@ -254,20 +273,22 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 
 ### Code Reduction
 
-| Workflow | Original | Refactored | Reduction |
-|----------|----------|------------|-----------|
-| CI | 190 lines | 150 lines | 21% |
-| Staging | 180 lines | 100 lines | 44% |
-| Production | 367 lines | 200 lines | 45% |
-| **Total** | **737 lines** | **450 lines** | **39%** |
+| Workflow   | Original      | Refactored    | Reduction |
+| ---------- | ------------- | ------------- | --------- |
+| CI         | 190 lines     | 150 lines     | 21%       |
+| Staging    | 180 lines     | 100 lines     | 44%       |
+| Production | 367 lines     | 200 lines     | 45%       |
+| **Total**  | **737 lines** | **450 lines** | **39%**   |
 
 ### Maintainability
 
 **Updating deployment logic**:
+
 - **Before**: Edit 3 workflow files (staging, production, rollback sections)
 - **After**: Edit 1 action file (`.github/actions/deploy-server/action.yml`)
 
 **Adding new environment**:
+
 - **Before**: Copy 150+ lines, modify host/secrets
 - **After**: Use existing actions, just change inputs
 
@@ -276,26 +297,32 @@ All reusable actions are located in `.github/actions/` directory. Each action is
 ## Best Practices
 
 ### 1. Input Validation
+
 Always provide sensible defaults and clear descriptions:
+
 ```yaml
 inputs:
   max_retries:
-    description: 'Maximum number of retry attempts'
+    description: "Maximum number of retry attempts"
     required: false
-    default: '30'  # Provide default
+    default: "30" # Provide default
 ```
 
 ### 2. Output Everything Important
+
 Make outputs available for downstream steps:
+
 ```yaml
 outputs:
   version:
-    description: 'The new version number'
+    description: "The new version number"
     value: ${{ steps.bump.outputs.version }}
 ```
 
 ### 3. Clear Error Messages
+
 Provide helpful error messages:
+
 ```bash
 if [ "${{ inputs.version_type }}" == "invalid" ]; then
   echo "ERROR: Invalid version type: ${{ inputs.version_type }}"
@@ -305,7 +332,9 @@ fi
 ```
 
 ### 4. Idempotency
+
 Actions should be safe to run multiple times:
+
 ```bash
 # Remove container if exists
 docker rm container-name || true
@@ -321,11 +350,13 @@ docker rm container-name  # Fails if not exists
 ### Common Issues
 
 **Problem**: Action not found
+
 ```
 Error: Unable to resolve action `./.github/actions/my-action`
 ```
 
 **Solution**:
+
 - Ensure you've checked out the code: `uses: actions/checkout@v4`
 - Verify the action path is correct
 - Check that `action.yml` exists in the directory
@@ -333,11 +364,13 @@ Error: Unable to resolve action `./.github/actions/my-action`
 ---
 
 **Problem**: Inputs not working
+
 ```
 Error: Input 'my_input' is required
 ```
 
 **Solution**:
+
 - Check input names match exactly (case-sensitive)
 - Ensure required inputs are provided
 - Verify the `with:` block syntax
@@ -345,11 +378,13 @@ Error: Input 'my_input' is required
 ---
 
 **Problem**: Outputs not available
+
 ```
 Error: Unable to process file command 'output' successfully
 ```
 
 **Solution**:
+
 - Use `$GITHUB_OUTPUT` instead of deprecated `set-output`
 - Format: `echo "name=value" >> $GITHUB_OUTPUT`
 
@@ -357,14 +392,14 @@ Error: Unable to process file command 'output' successfully
 
 ## Summary
 
-| Action | Purpose | Lines Saved |
-|--------|---------|-------------|
-| version-increment | Version management | ~30 per workflow |
-| docker-build-push | Docker build/push | ~40 per workflow |
-| health-check | Health verification | ~25 per workflow |
-| api-tests | API testing | ~15 per workflow |
-| deploy-server | Server deployment | ~70 per workflow |
-| rollback-deployment | Rollback logic | ~40 per workflow |
+| Action              | Purpose             | Lines Saved      |
+| ------------------- | ------------------- | ---------------- |
+| version-increment   | Version management  | ~30 per workflow |
+| docker-build-push   | Docker build/push   | ~40 per workflow |
+| health-check        | Health verification | ~25 per workflow |
+| api-tests           | API testing         | ~15 per workflow |
+| deploy-server       | Server deployment   | ~70 per workflow |
+| rollback-deployment | Rollback logic      | ~40 per workflow |
 
 **Total**: 6 reusable actions saving ~287 lines of duplicated code across workflows.
 

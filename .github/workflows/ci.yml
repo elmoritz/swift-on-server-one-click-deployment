@@ -212,7 +212,7 @@ jobs:
             hummingbird-todos:test
 
           # Wait for container to be healthy
-          timeout 60 bash -c 'until docker exec todos-test curl -f http://localhost:8080/health 2>/dev/null; do sleep 2; done'
+          timeout 60 bash -c 'until docker exec todos-test curl -f http://localhost:8080/api/status/health 2>/dev/null; do sleep 2; done'
 
       - name: Run API integration tests
         uses: ./.github/actions/api-tests

@@ -7,6 +7,7 @@ This repository demonstrates a complete deployment pipeline for Swift server app
 ## Why This Repository Exists
 
 If you're a Swift developer who wants to:
+
 - ✅ Deploy server-side Swift applications to production
 - ✅ Learn CI/CD and DevOps practices
 - ✅ Understand Docker, GitHub Actions, and deployment automation
@@ -89,14 +90,14 @@ The server runs on `http://localhost:8080`
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check endpoint |
-| GET | `/api/todos` | List all todos |
-| POST | `/api/todos` | Create a new todo |
-| GET | `/api/todos/:id` | Get a specific todo |
-| PATCH | `/api/todos/:id` | Update a todo |
-| DELETE | `/api/todos/:id` | Delete a todo |
+| Method | Endpoint         | Description           |
+| ------ | ---------------- | --------------------- |
+| GET    | `/health`        | Health check endpoint |
+| GET    | `/api/todos`     | List all todos        |
+| POST   | `/api/todos`     | Create a new todo     |
+| GET    | `/api/todos/:id` | Get a specific todo   |
+| PATCH  | `/api/todos/:id` | Update a todo         |
+| DELETE | `/api/todos/:id` | Delete a todo         |
 
 ### Example Usage
 
@@ -157,6 +158,7 @@ Your Commit
 ```
 
 **Key Features:**
+
 - ⚡ **Fast:** Registry-based Docker caching (builds in 30-90 seconds after first run)
 - 🛡️ **Safe:** Automatic rollback if anything fails
 - 📊 **Visible:** Every step is logged in GitHub Actions
@@ -269,14 +271,16 @@ swiftlint --fix
 1. **Fork or create the repository on GitHub**
 
 2. **Configure GitHub Secrets** (Settings > Secrets and variables > Actions):
-   - `STAGING_HOST`
+
+   - `SSH_HOST`
    - `STAGING_USER`
    - `STAGING_SSH_KEY`
-   - `PRODUCTION_HOST`
-   - `PRODUCTION_USER`
+   - `SSH_HOST`
+   - `SSH_USER`
    - `PRODUCTION_SSH_KEY`
 
 3. **Configure GitHub Variables**:
+
    - `DEPLOYMENT_URL`
 
 4. **Push to main branch** - Staging deploys automatically
@@ -345,6 +349,7 @@ cat /opt/todos-app/last-deployment.txt
 Automatic backups are created before each deployment in `/opt/todos-app/backups/`.
 
 Manual backup:
+
 ```bash
 cp /opt/todos-app/data/db.sqlite /opt/todos-app/backups/db.sqlite.backup.$(date +%Y%m%d-%H%M%S)
 ```
@@ -355,16 +360,16 @@ cp /opt/todos-app/data/db.sqlite /opt/todos-app/backups/db.sqlite.backup.$(date 
 
 All documentation is designed to be educational and accessible:
 
-| Document | Purpose | Best For |
-|----------|---------|----------|
-| [LEARNING_PATH.md](LEARNING_PATH.md) | Choose your learning path based on experience | Everyone - start here! |
-| [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md) | Step-by-step hands-on tutorial | Beginners wanting practical experience |
-| [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md) | Introduction to GitHub Actions | Developers new to CI/CD |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | Why this pipeline is designed this way | Understanding design decisions |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions | When things go wrong |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Complete deployment reference | Production deployments |
-| [VERSIONING.md](VERSIONING.md) | Version management guide | Understanding versioning |
-| [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) | Docker caching strategy | Performance optimization |
+| Document                                             | Purpose                                       | Best For                               |
+| ---------------------------------------------------- | --------------------------------------------- | -------------------------------------- |
+| [LEARNING_PATH.md](LEARNING_PATH.md)                 | Choose your learning path based on experience | Everyone - start here!                 |
+| [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md)           | Step-by-step hands-on tutorial                | Beginners wanting practical experience |
+| [GITHUB_ACTIONS_PRIMER.md](GITHUB_ACTIONS_PRIMER.md) | Introduction to GitHub Actions                | Developers new to CI/CD                |
+| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | Why this pipeline is designed this way        | Understanding design decisions         |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md)             | Common issues and solutions                   | When things go wrong                   |
+| [DEPLOYMENT.md](DEPLOYMENT.md)                       | Complete deployment reference                 | Production deployments                 |
+| [VERSIONING.md](VERSIONING.md)                       | Version management guide                      | Understanding versioning               |
+| [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md)       | Docker caching strategy                       | Performance optimization               |
 
 ---
 
@@ -373,16 +378,19 @@ All documentation is designed to be educational and accessible:
 **Welcome!** This repository accompanies the talk on Swift server deployment.
 
 ### Before the Talk
+
 - ⭐ Star this repository
 - 📖 Skim through [LEARNING_PATH.md](LEARNING_PATH.md)
 - 💻 Optionally: Fork the repo and try running it locally
 
 ### During the Talk
+
 - 📝 Follow along with [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)
 - 👀 Watch the live demo of the deployment pipeline
 - 🙋 Ask questions!
 
 ### After the Talk
+
 - 🚀 Complete [FIRST_DEPLOYMENT.md](FIRST_DEPLOYMENT.md) tutorial
 - 🔧 Adapt this pipeline to your own projects
 - 💬 Share your experience or ask questions via GitHub issues
