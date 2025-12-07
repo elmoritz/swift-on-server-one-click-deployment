@@ -90,13 +90,14 @@ runs:
         username: ${{ inputs.ssh_user }}
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
+        target: "~/"
         envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,COMPOSE_FOLDER,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
         script: |
           # Make script executable
-          chmod +x ~/server-manager.swift
+          chmod +x ./server-manager.swift
 
           # Run deployment
-          ~/server-manager.swift deploy
+          ./server-manager.swift deploy
 
     - name: Deployment summary
       shell: bash
