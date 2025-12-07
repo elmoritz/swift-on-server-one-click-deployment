@@ -6,10 +6,6 @@ services:
     container_name: hummingbird-todos
     ports:
       - "8080:8080"
-    environment:
-      - HOSTNAME=0.0.0.0
-      - PORT=8080
-      - DB_PATH=/app/data/db.sqlite
     volumes:
       - todos-data:/app/data
     restart: unless-stopped

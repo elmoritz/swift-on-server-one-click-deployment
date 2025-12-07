@@ -52,13 +52,7 @@ USER appuser
 EXPOSE 8080
 
 # Environment variables with defaults
-ENV HOSTNAME=0.0.0.0
-ENV PORT=8080
 ENV DB_PATH=/app/data/db.sqlite
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
 # Run migrations and start server
-CMD ["/app/todos-server", "--hostname", "${HOSTNAME}", "--port", "${PORT}"]
+CMD ["/app/todos-server", "--hostname", "0.0.0.0", "-p", "8080"]
