@@ -72,6 +72,7 @@ func getComposeFilePath(composeFolder: String, deployPath: String) -> String? {
             return fullPath
         }
     }
+    return nil
 }
 
 // MARK: - Deploy Command
@@ -152,10 +153,12 @@ func deployWithCompose(composeFolder: String, deployPath: String) {
     print("Using Docker Compose deployment")
 
     // Verify docker-compose.yml exists
-    let composeFile = "\(composeDir)/docker-compose.yml"
+    
     guard let composeFile = getComposeFilePath(composeFolder: composeFolder, deployPath: deployPath) else {
-        exitWithError("docker-compose-file not found in: \(composeDir)")
+        exitWithError("docker-compose-file not found in: \(composeFolder)")
     }
+
+    let composeDir = (composeFile as NSString).deletingLastPathComponent
 
     print("Compose directory: \(composeDir)")
     _ = FileManager.default.changeCurrentDirectoryPath(composeDir)
