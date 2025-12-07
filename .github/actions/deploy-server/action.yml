@@ -36,10 +36,6 @@ inputs:
   github_token:
     description: 'GitHub token for registry authentication'
     required: true
-  deploy_path:
-    description: 'Deployment directory on server'
-    required: false
-    default: '/opt/todos-app'
   compose_folder:
     description: 'Folder containing docker-compose.yml (relative to deploy_path or absolute path)'
     required: false
@@ -74,7 +70,7 @@ runs:
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
         source: ".github/remote-scripts/server-manager.swift"
-        target: "${{ inputs.deploy_path }}/"
+        target: "${{ inputs.compose_folder }}/"
         strip_components: 2
 
     - name: Deploy via SSH
@@ -84,7 +80,7 @@ runs:
         VERSION: ${{ inputs.version }}
         CONTAINER_NAME: ${{ inputs.container_name }}
         PORT_MAPPING: ${{ inputs.port }}
-        DEPLOY_PATH: ${{ inputs.deploy_path }}
+        DEPLOY_PATH: ${{ inputs.compose_folder }}
         COMPOSE_FOLDER: ${{ inputs.compose_folder }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_ACTOR: ${{ github.actor }}
