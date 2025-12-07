@@ -65,9 +65,12 @@ func getComposeFilePath(composeFolder: String, deployPath: String) -> String? {
         let fullPath: String
         if composeFolder.hasPrefix("/") {
             fullPath = "\(composeFolder)/\(fileName)"
+        } else if composeFolder.hasPrefix("~") {
+            fullPath = "\(composeFolder)/\(fileName)"
         } else {
             fullPath = "\(deployPath)/\(composeFolder)/\(fileName)"
         }
+        print("Searching for compose file in: \(fullPath)")
         if FileManager.default.fileExists(atPath: fullPath) {
             return fullPath
         }
