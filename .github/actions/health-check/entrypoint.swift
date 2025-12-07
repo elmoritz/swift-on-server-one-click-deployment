@@ -1,10 +1,37 @@
 #!/usr/bin/env swift
 import Foundation
 
-// MARK: - Configuration
-let baseURL = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "http://localhost:8080"
-let maxRetries = CommandLine.arguments.count > 2 ? Int(CommandLine.arguments[2]) ?? 30 : 30
-let retryInterval = CommandLine.arguments.count > 3 ? Int(CommandLine.arguments[3]) ?? 2 : 2
+// MARK: - Argument Parsing
+guard CommandLine.arguments.count == 5 else {
+    print("Usage: \(CommandLine.arguments[0]) <base_url> <endpoint> <max_retries> <retry_interval>")
+    exit(1)
+}
+
+let baseURL = CommandLine.arguments[1]
+let endpoint = CommandLine.arguments[2]
+let maxRetries = Int(CommandLine.arguments[3]) ?? 30
+let retryInterval = Int(CommandLine.arguments[4]) ?? 2
+
+// MARK: - URL Construction
+func buildURL(base: String, endpoint: String) -> String {
+    var cleanBase = base.trimmingCharacters(in: .whitespaces)
+    var cleanEndpoint = endpoint.trimmingCharacters(in: .whitespaces)
+
+    // Remove trailing slash from base URL
+    while cleanBase.hasSuffix("/") {
+        cleanBase.removeLast()
+    }
+
+    // Remove leading slash from endpoint
+    while cleanEndpoint.hasPrefix("/") {
+        cleanEndpoint.removeFirst()
+    }
+
+    // Construct full URL with exactly one slash
+    return "\(cleanBase)/\(cleanEndpoint)"
+}
+
+let fullURL = buildURL(base: baseURL, endpoint: endpoint)
 
 // MARK: - Helper Functions
 func printSection(_ message: String) {
@@ -21,9 +48,21 @@ func printError(_ message: String) {
     print("❌ \(message)")
 }
 
+func writeGitHubOutput(_ key: String, _ value: String) {
+    if let githubOutput = ProcessInfo.processInfo.environment["GITHUB_OUTPUT"] {
+        if let handle = try? FileHandle(forWritingTo: URL(fileURLWithPath: githubOutput)) {
+            handle.seekToEndOfFile()
+            if let data = "\(key)=\(value)\n".data(using: .utf8) {
+                handle.write(data)
+            }
+            handle.closeFile()
+        }
+    }
+}
+
 // MARK: - Health Check Logic
-printSection("Health Check for Hummingbird Todos")
-print("URL: \(baseURL)/health")
+printSection("Health Check")
+print("URL: \(fullURL)")
 print("Max retries: \(maxRetries)")
 print("Retry interval: \(retryInterval)s")
 print("")
@@ -39,7 +78,7 @@ while retryCount < maxRetries {
     process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
     process.arguments = [
         "-s", "-f", "-w", "\n%{http_code}",
-        "\(baseURL)/health"
+        fullURL
     ]
 
     let pipe = Pipe()
@@ -58,6 +97,7 @@ while retryCount < maxRetries {
                 print("")
                 printSuccess("Service is healthy!")
                 print("Response code: \(httpCode)")
+                writeGitHubOutput("status", "success")
                 exit(0)
             } else {
                 print("Unexpected status: \(lines.last ?? "unknown")")
@@ -76,4 +116,5 @@ while retryCount < maxRetries {
 
 print("")
 printError("Health check failed after \(maxRetries) attempts")
+writeGitHubOutput("status", "failure")
 exit(1)

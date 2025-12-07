@@ -29,12 +29,5 @@ runs:
       id: check
       shell: bash
       run: |
-        chmod +x scripts/health-check.swift
-        FULL_URL="${{ inputs.url }}${{ inputs.endpoint }}"
-
-        if ./scripts/health-check.swift "$FULL_URL" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"; then
-          echo "status=success" >> $GITHUB_OUTPUT
-        else
-          echo "status=failure" >> $GITHUB_OUTPUT
-          exit 1
-        fi
+        chmod +x ${{ github.action_path }}/entrypoint.swift
+        ${{ github.action_path }}/entrypoint.swift "${{ inputs.url }}" "${{ inputs.endpoint }}" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"
