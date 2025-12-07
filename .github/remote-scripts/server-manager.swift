@@ -171,17 +171,23 @@ func deployWithCompose(composeFolder: String, deployPath: String) {
     let pullResult = runShell("docker compose pull")
     if !pullResult.success {
         print("⚠️  Warning: Failed to pull some images")
+        print("output: \(pullResult.output)")
     }
 
     // Stop and remove old containers
     print("Stopping existing services...")
-    _ = runShell("docker compose down")
+    let stopResult = runShell("docker compose down")
+    if !stopResult.success {
+        print("⚠️  Warning: Failed to stop some services")
+        print("output: \(stopResult.output)")
+    }
 
     // Start services
     print("Starting services with Docker Compose...")
     let upResult = runShell("docker compose up -d")
     if !upResult.success {
         exitWithError("Failed to start services")
+        print("output: \(upResult.output)")
     }
 
     // Wait for services to start
