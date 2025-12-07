@@ -70,7 +70,7 @@ runs:
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
         source: ".github/remote-scripts/server-manager.swift"
-        target: "${{ inputs.compose_folder }}/"
+        target: "~/"
         strip_components: 2
 
     - name: Deploy via SSH
@@ -92,14 +92,11 @@ runs:
         port: ${{ inputs.ssh_port }}
         envs: IMAGE_TAG,VERSION,CONTAINER_NAME,PORT_MAPPING,DEPLOY_PATH,COMPOSE_FOLDER,GITHUB_TOKEN,GITHUB_ACTOR,REGISTRY
         script: |
-          # Ensure deployment directory exists
-          mkdir -p $DEPLOY_PATH
-
           # Make script executable
-          chmod +x $DEPLOY_PATH/server-manager.swift
+          chmod +x ~/server-manager.swift
 
           # Run deployment
-          $DEPLOY_PATH/server-manager.swift deploy
+          ~/server-manager.swift deploy
 
     - name: Deployment summary
       shell: bash

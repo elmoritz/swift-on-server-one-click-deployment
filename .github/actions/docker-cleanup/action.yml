@@ -40,7 +40,7 @@ runs:
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
         source: ".github/remote-scripts/server-manager.swift"
-        target: "${{ inputs.deploy_path }}/"
+        target: "~/"
         strip_components: 2
 
     - name: Remove old container and prune images
@@ -57,7 +57,7 @@ runs:
         envs: CONTAINER_NAME,PRUNE_IMAGES,DEPLOY_PATH
         script: |
           # Make script executable
-          chmod +x $DEPLOY_PATH/server-manager.swift
+          chmod +x ~/server-manager.swift
 
           # Run cleanup
-          $DEPLOY_PATH/server-manager.swift cleanup
+          ~/server-manager.swift cleanup

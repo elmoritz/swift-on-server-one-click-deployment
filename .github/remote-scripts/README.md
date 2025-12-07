@@ -24,13 +24,11 @@ This directory contains Swift scripts designed to run on remote deployment serve
 **The script is automatically uploaded and updated before each use.**
 
 The GitHub Actions workflows automatically:
-1. Upload the latest `server-manager.swift` to your deployment directory
+1. Upload the latest `server-manager.swift` to the user's home directory (`~/server-manager.swift`)
 2. Make it executable with `chmod +x`
 3. Run the appropriate command
 
-The script will be located at: `{DEPLOY_PATH}/server-manager.swift` (default: `/opt/todos-app/server-manager.swift`)
-
-This ensures you always use the latest version from your repository.
+This ensures you always use the latest version from your repository without needing write permissions to the deployment directory.
 
 ## Available Scripts
 
@@ -136,7 +134,7 @@ PRUNE_IMAGES=true \
 ## Usage from GitHub Actions
 
 The GitHub Actions workflows automatically:
-1. Upload the latest script to `{DEPLOY_PATH}/server-manager.swift`
+1. Upload the latest script to `~/server-manager.swift`
 2. Make it executable
 3. Execute the appropriate command
 
@@ -146,6 +144,8 @@ See these actions:
 - [.github/actions/docker-cleanup/action.yml](/.github/actions/docker-cleanup/action.yml)
 
 **The script is always up-to-date** because it's uploaded fresh from the repository before each use.
+
+**Note:** The script is placed in the home directory to avoid permission issues, while the actual deployment operations happen in the directories specified by environment variables (`DEPLOY_PATH`, `COMPOSE_FOLDER`).
 
 ## Database Backups
 
@@ -163,14 +163,16 @@ The script stores deployment information:
 
 ## Script Location
 
-By default, the script is installed at:
+The script is uploaded to:
 ```
-/opt/todos-app/server-manager.swift
+~/server-manager.swift
 ```
 
-This location is determined by the `deploy_path` input in your workflows (default: `/opt/todos-app`).
+This avoids permission issues when uploading to system directories. The script itself will work with the deployment directories specified in the environment variables:
+- `DEPLOY_PATH` - Where deployment files are located (default: `/opt/todos-app`)
+- `COMPOSE_FOLDER` - Where docker-compose.yml is located (for Compose deployments)
 
-The script will be in the same directory as:
+The deployment directory contains:
 - `docker-compose.yml` (if using Docker Compose mode)
 - Database files (`data/db.sqlite`)
 - Deployment metadata files
@@ -180,7 +182,7 @@ The script will be in the same directory as:
 ### Script not executable
 This is handled automatically by the actions, but if needed:
 ```bash
-chmod +x /opt/todos-app/server-manager.swift
+chmod +x ~/server-manager.swift
 ```
 
 ### Swift not found
@@ -228,11 +230,11 @@ docker ps -a | grep {CONTAINER_NAME}
 
 ### Updating the Script
 
-1. Update the script in the repository
-2. Re-deploy to the server:
-   ```bash
-   scp .github/remote-scripts/server-manager.swift user@server:/opt/scripts/
-   ```
+The script is automatically updated on each workflow run. To manually update:
+```bash
+scp .github/remote-scripts/server-manager.swift user@server:~/
+chmod +x ~/server-manager.swift
+```
 
 ### Manually Running the Script
 
@@ -245,16 +247,16 @@ VERSION=1.0.0 \
 CONTAINER_NAME=todos-app \
 PORT_MAPPING=8080:8080 \
 DEPLOY_PATH=/opt/todos-app \
-/opt/todos-app/server-manager.swift deploy
+~/server-manager.swift deploy
 
 # Rollback
 CONTAINER_NAME=todos-app \
 DEPLOY_PATH=/opt/todos-app \
-/opt/todos-app/server-manager.swift rollback
+~/server-manager.swift rollback
 
 # Cleanup
 CONTAINER_NAME=todos-app \
-/opt/todos-app/server-manager.swift cleanup
+~/server-manager.swift cleanup
 ```
 
 ### Checking Disk Space

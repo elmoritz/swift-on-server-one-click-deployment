@@ -46,7 +46,7 @@ runs:
         key: ${{ inputs.ssh_key }}
         port: ${{ inputs.ssh_port }}
         source: ".github/remote-scripts/server-manager.swift"
-        target: "${{ inputs.deploy_path }}/"
+        target: "~/"
         strip_components: 2
 
     - name: Execute rollback via SSH
@@ -62,10 +62,10 @@ runs:
         envs: CONTAINER_NAME,DEPLOY_PATH
         script: |
           # Make script executable
-          chmod +x $DEPLOY_PATH/server-manager.swift
+          chmod +x ~/server-manager.swift
 
           # Run rollback
-          $DEPLOY_PATH/server-manager.swift rollback
+          ~/server-manager.swift rollback
 
     - name: Rollback summary
       shell: bash
