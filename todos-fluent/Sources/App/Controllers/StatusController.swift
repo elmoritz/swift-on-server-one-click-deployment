@@ -39,25 +39,33 @@ struct StatusController<Context: RequestContext> {
     }
 
     /// Health check endpoint - checks database connectivity and returns service status
-    @Sendable func health(_ request: Request, context: Context) async throws -> HealthResponse {
+    @Sendable func health(_ request: Request, context: Context) async -> HealthResponse {
+        print("let db = self.fluent.db()")
         let db = self.fluent.db()
+        print("var databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: Not checked)")
         var databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: "Not checked")
 
         // Verify database connectivity by attempting a transaction
         // This tests actual database connectivity without depending on any models
         do {
+            print("try await db.transaction { transaction in")
             try await db.transaction { transaction in
                 // Empty transaction - just verifies we can connect to the database
-                transaction.eventLoop.makeSucceededFuture(())
+                print("transaction.eventLoop.makeSucceededFuture(())")
+                return transaction.eventLoop.makeSucceededFuture(())
             }.get()
+            print("databaseHealth = HealthResponse.DatabaseHealth(connected: true, message: Connected)")
             databaseHealth = HealthResponse.DatabaseHealth(connected: true, message: "Connected")
         } catch {
+            print("databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: Connection failed: \(error.localizedDescription))")
             databaseHealth = HealthResponse.DatabaseHealth(connected: false, message: "Connection failed: \(error.localizedDescription)")
         }
-
+        print("let timestamp = ISO8601DateFormatter().string(from: Date())")
         let timestamp = ISO8601DateFormatter().string(from: Date())
+        print("let overallStatus = databaseHealth.connected ? healthy : unhealthy")
         let overallStatus = databaseHealth.connected ? "healthy" : "unhealthy"
 
+        print("let response = HealthResponse(")
         let response = HealthResponse(
             status: overallStatus,
             database: databaseHealth,
