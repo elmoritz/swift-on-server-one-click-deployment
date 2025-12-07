@@ -59,6 +59,21 @@ func getEnv(_ key: String, default defaultValue: String = "") -> String {
     return ProcessInfo.processInfo.environment[key] ?? defaultValue
 }
 
+func getComposeFilePath(composeFolder: String, deployPath: String) -> String? {
+    let possibleComposeFileNames = ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"]
+    for fileName in possibleComposeFileNames {
+        let fullPath: String
+        if composeFolder.hasPrefix("/") {
+            fullPath = "\(composeFolder)/\(fileName)"
+        } else {
+            fullPath = "\(deployPath)/\(composeFolder)/\(fileName)"
+        }
+        if FileManager.default.fileExists(atPath: fullPath) {
+            return fullPath
+        }
+    }
+}
+
 // MARK: - Deploy Command
 func deployContainer() {
     print("=========================================")
@@ -91,7 +106,7 @@ func deployContainer() {
         exitWithError("Failed to create deployment directory")
     }
 
-    FileManager.default.changeCurrentDirectoryPath(deployPath)
+    _ = FileManager.default.changeCurrentDirectoryPath(deployPath)
 
     // Login to registry
     if !githubToken.isEmpty && !githubActor.isEmpty {
@@ -136,28 +151,14 @@ func deployContainer() {
 func deployWithCompose(composeFolder: String, deployPath: String) {
     print("Using Docker Compose deployment")
 
-    // Determine compose directory
-    let composeDir: String
-    if composeFolder.hasPrefix("/") {
-        composeDir = composeFolder
-    } else {
-        composeDir = "\(deployPath)/\(composeFolder)"
-    }
-
-    // Verify compose directory exists
-    var isDirectory: ObjCBool = false
-    guard FileManager.default.fileExists(atPath: composeDir, isDirectory: &isDirectory), isDirectory.boolValue else {
-        exitWithError("Compose folder not found: \(composeDir)")
-    }
-
     // Verify docker-compose.yml exists
     let composeFile = "\(composeDir)/docker-compose.yml"
-    guard FileManager.default.fileExists(atPath: composeFile) else {
-        exitWithError("docker-compose.yml not found in: \(composeDir)")
+    guard let composeFile = getComposeFilePath(composeFolder: composeFolder, deployPath: deployPath) else {
+        exitWithError("docker-compose-file not found in: \(composeDir)")
     }
 
     print("Compose directory: \(composeDir)")
-    FileManager.default.changeCurrentDirectoryPath(composeDir)
+    _ = FileManager.default.changeCurrentDirectoryPath(composeDir)
 
     // Backup database if exists
     backupDatabase(deployPath: deployPath)
@@ -286,7 +287,7 @@ func rollbackDeployment() {
     print("Deploy Path: \(deployPath)")
     print("=========================================\n")
 
-    FileManager.default.changeCurrentDirectoryPath(deployPath)
+    _ = FileManager.default.changeCurrentDirectoryPath(deployPath)
 
     // Stop failed container
     print("Stopping failed container...")
