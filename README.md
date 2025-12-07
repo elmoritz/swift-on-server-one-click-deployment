@@ -277,8 +277,7 @@ swiftlint --fix
    - `PRODUCTION_SSH_KEY`
 
 3. **Configure GitHub Variables**:
-   - `STAGING_URL`
-   - `PRODUCTION_URL`
+   - `DEPLOYMENT_URL`
 
 4. **Push to main branch** - Staging deploys automatically
 

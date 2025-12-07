@@ -17,8 +17,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-  STAGING_URL: ${{ vars.STAGING_URL }}
-  STAGING_COMPOSE_FOLDER: ${{ vars.STAGING_COMPOSE_FOLDER }}
+  DEPLOYMENT_URL: ${{ vars.DEPLOYMENT_URL }}
+  COMPOSE_FOLDER: ${{ vars.COMPOSE_FOLDER }}
 
 jobs:
   deploy-staging:
@@ -29,7 +29,7 @@ jobs:
       packages: write
     environment:
       name: staging
-      url: ${{ env.STAGING_URL }}
+      url: ${{ env.DEPLOYMENT_URL }}
 
     steps:
       - name: Checkout code
@@ -73,20 +73,20 @@ jobs:
           version: "latest"
           container_name: "container-todos-staging"
           port: "10000:8080"
-          compose_folder: ${{ env.STAGING_COMPOSE_FOLDER }}
+          compose_folder: ${{ env.COMPOSE_FOLDER }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       # - name: Health check
       #   uses: ./.github/actions/health-check
       #   with:
-      #     url: ${{ env.STAGING_URL }}
+      #     url: ${{ env.DEPLOYMENT_URL }}
       #     max_retries: "30"
       #     retry_interval: "3"
 
       # - name: Run API tests against staging
       #   uses: ./.github/actions/api-tests
       #   with:
-      #     base_url: ${{ env.STAGING_URL }}
+      #     base_url: ${{ env.DEPLOYMENT_URL }}
 
       # - name: Rollback on failure
       #   if: failure()
@@ -112,7 +112,7 @@ jobs:
       - name: Monitor for 5 minutes
         uses: ./.github/actions/extended-monitoring
         with:
-          url: ${{ env.STAGING_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
           duration_minutes: "5"
           check_interval_seconds: "30"
           max_consecutive_failures: "3"

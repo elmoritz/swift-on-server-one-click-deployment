@@ -393,12 +393,12 @@ We created **15 reusable composite actions** in [.github/actions/](.github/actio
 # In deploy-staging.yml
 - uses: ./.github/actions/health-check
   with:
-    url: ${{ vars.STAGING_URL }}
+    url: ${{ vars.DEPLOYMENT_URL }}
 
 # In deploy-production.yml
 - uses: ./.github/actions/health-check
   with:
-    url: ${{ vars.PRODUCTION_URL }}
+    url: ${{ vars.DEPLOYMENT_URL }}
 ```
 
 **Benefits:**

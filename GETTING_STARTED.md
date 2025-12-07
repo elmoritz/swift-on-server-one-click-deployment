@@ -63,7 +63,7 @@ Go to Settings → Secrets and variables → Actions:
 - `PRODUCTION_HOST`, `PRODUCTION_USER`, `PRODUCTION_SSH_KEY`
 
 **Required Variables:**
-- `STAGING_URL`, `PRODUCTION_URL`
+- `DEPLOYMENT_URL`
 
 ### 2. Deploy to Staging
 ```bash

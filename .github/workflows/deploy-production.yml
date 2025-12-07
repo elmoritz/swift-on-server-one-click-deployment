@@ -17,9 +17,14 @@ on:
         required: false
         type: string
 
+  
+  
+  
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  COMPOSE_FOLDER: ${{ vars.COMPOSE_FOLDER }}
+  DEPLOYMENT_URL: ${{ vars.DEPLOYMENT_URL }}
 
 jobs:
   create-release-version:
@@ -70,14 +75,14 @@ jobs:
       - name: Validate staging health
         uses: ./.github/actions/health-check
         with:
-          url: ${{ vars.STAGING_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
           max_retries: '10'
           retry_interval: '2'
 
       - name: Run final tests on staging
         uses: ./.github/actions/api-tests
         with:
-          base_url: ${{ vars.STAGING_URL }}
+          base_url: ${{ env.DEPLOYMENT_URL }}
 
   deploy-production:
     name: Deploy to Production Server
@@ -88,7 +93,7 @@ jobs:
       packages: write
     environment:
       name: production
-      url: ${{ vars.PRODUCTION_URL }}
+      url: ${{ env.DEPLOYMENT_URL }}
 
     steps:
       - name: Checkout code
@@ -151,20 +156,20 @@ jobs:
           version: ${{ needs.create-release-version.outputs.version }}
           container_name: 'container-todos-production'
           port: '10001:8080'
-          compose_folder: ${{ vars.PRODUCTION_COMPOSE_FOLDER || secrets.PRODUCTION_COMPOSE_FOLDER || '' }}
+          compose_folder: ${{ vars.COMPOSE_FOLDER }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Health check
         uses: ./.github/actions/health-check
         with:
-          url: ${{ vars.PRODUCTION_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
           max_retries: '30'
           retry_interval: '3'
 
       - name: Run smoke tests
         uses: ./.github/actions/api-tests
         with:
-          base_url: ${{ vars.PRODUCTION_URL }}
+          base_url: ${{ env.DEPLOYMENT_URL }}
 
       - name: Remove old production container
         if: success()
@@ -192,7 +197,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/health-check
         with:
-          url: ${{ vars.PRODUCTION_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
           max_retries: '20'
           retry_interval: '3'
 
@@ -209,7 +214,7 @@ jobs:
       - name: Extended monitoring (15 minutes)
         uses: ./.github/actions/extended-monitoring
         with:
-          url: ${{ vars.PRODUCTION_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
           duration_minutes: '15'
           check_interval_seconds: '30'
           max_consecutive_failures: '3'
@@ -217,7 +222,7 @@ jobs:
       - name: Final validation
         uses: ./.github/actions/api-tests
         with:
-          base_url: ${{ vars.PRODUCTION_URL }}
+          base_url: ${{ env.DEPLOYMENT_URL }}
 
       - name: Deployment success notification
         if: success()
@@ -227,7 +232,7 @@ jobs:
           environment: 'production'
           version: ${{ needs.create-release-version.outputs.version }}
           version_type: ${{ inputs.version_type }}
-          url: ${{ vars.PRODUCTION_URL }}
+          url: ${{ env.DEPLOYMENT_URL }}
 
       - name: Alert on monitoring failure
         if: failure()

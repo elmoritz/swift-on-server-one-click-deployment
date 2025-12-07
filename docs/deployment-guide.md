@@ -90,18 +90,18 @@ Navigate to your GitHub repository settings and add the following secrets:
 
 Add these variables in your repository settings under Variables:
 
-- `STAGING_URL` - Full URL to staging server (e.g., `http://staging.example.com:8080`)
-- `PRODUCTION_URL` - Full URL to production server (e.g., `https://api.example.com`)
-- `STAGING_COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on staging server
-- `PRODUCTION_COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on production server
+- `DEPLOYMENT_URL` - Full URL to staging server (e.g., `http://staging.example.com:8080`)
+- `DEPLOYMENT_URL` - Full URL to production server (e.g., `https://api.example.com`)
+- `COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on staging server
+- `COMPOSE_FOLDER` - (Optional) Folder containing docker-compose.yml on production server
 
 #### Docker Compose Deployment (Optional)
 
 If you want to use Docker Compose for deployment instead of `docker run`:
 
 1. Add the compose folder path to GitHub Variables or Secrets:
-   - **Variables** (recommended): `STAGING_COMPOSE_FOLDER`, `PRODUCTION_COMPOSE_FOLDER`
-   - **Secrets** (alternative): `STAGING_COMPOSE_FOLDER`, `PRODUCTION_COMPOSE_FOLDER`
+   - **Variables** (recommended): `COMPOSE_FOLDER`
+   - **Secrets** (alternative): `COMPOSE_FOLDER`
 
 2. The folder path can be:
    - **Relative path**: Relative to the deployment directory (e.g., `compose` → `/opt/todos-app/compose`)
@@ -189,8 +189,7 @@ services:
       start_period: 5s
 EOF
 
-# Set the STAGING_COMPOSE_FOLDER variable in GitHub to: compose
-# Set the PRODUCTION_COMPOSE_FOLDER variable in GitHub to: compose
+# Set the COMPOSE_FOLDER variable in GitHub to: compose
 ```
 
 ---
@@ -555,7 +554,7 @@ cp /opt/todos-app/backups/db.sqlite.backup.YYYYMMDD-HHMMSS \
 
 **Solutions:**
 - Verify the compose folder exists on the server
-- Check if the path in `STAGING_COMPOSE_FOLDER`/`PRODUCTION_COMPOSE_FOLDER` is correct
+- Check if the path in `COMPOSE_FOLDER` is correct
 - If using relative path, ensure it's relative to `/opt/todos-app` (or your `deploy_path`)
 - Verify `docker-compose.yml` exists in the specified folder:
   ```bash
