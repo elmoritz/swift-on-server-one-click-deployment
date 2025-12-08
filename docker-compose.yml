@@ -25,9 +25,9 @@ services:
       - "8080:8080"
     environment:
       POSTGRES_HOST: postgres
-      POSTGRES_USER: todos
-      POSTGRES_PASSWORD: todos
-      POSTGRES_DB: todos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TopSecretPassword
+      POSTGRES_DB: postgres
     depends_on:
       postgres:
         condition: service_healthy

@@ -39,16 +39,19 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Get current version from git tags (4-part staging version)
+      - name: Get semantic version from git tags
         id: version
-        uses: ./.github/actions/get-version
-        with:
-          release-type: "build"
+        uses: ./.github/actions/get-semantic-version
+
+      - name: Calculate build number
+        id: build-number
+        uses: ./.github/actions/calculate-build-number
 
       - name: Set version in app code
         uses: ./.github/actions/set-app-version
         with:
-          version: ${{ steps.version.outputs.release-version }}
+          version: ${{ steps.version.outputs.version }}
+          build-number: ${{ steps.build-number.outputs.build-number }}
           environment: "staging"
 
       - name: Build Docker image
@@ -57,7 +60,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image_name: ${{ env.IMAGE_NAME }}
-          version: ${{ steps.version.outputs.release-version }}
+          version: ${{ steps.version.outputs.version }}-${{ steps.build-number.outputs.build-number }}
           tags: "latest"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
