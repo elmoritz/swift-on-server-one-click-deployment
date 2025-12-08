@@ -5,7 +5,6 @@
 //  Created by Moritz Ellerbrock on 08.12.25.
 //
 
-
 import FluentKit
 
 struct CreateTodoModel: AsyncMigration {

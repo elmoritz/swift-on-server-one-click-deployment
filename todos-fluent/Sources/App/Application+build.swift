@@ -1,7 +1,7 @@
-import Hummingbird
-import Logging
 import FluentPostgresDriver
+import Hummingbird
 import HummingbirdFluent
+import Logging
 
 /// Application arguments protocol. We use a protocol so we can call
 /// `buildApplication` inside Tests as well as in the App executable.
@@ -17,7 +17,6 @@ public protocol AppArguments {
 enum StartUpError: Error {
     case databaseCouldNotBeCreated
 }
-
 
 // Request context used by application
 typealias AppRequestContext = BasicRequestContext

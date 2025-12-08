@@ -17,7 +17,7 @@ final class AppTests: XCTestCase {
         let title: String
         let order: Int?
     }
- 
+
     static func create(title: String, order: Int? = nil, client: some TestClientProtocol) async throws -> Todo {
         let request = CreateRequest(title: title, order: order)
         let buffer = try JSONEncoder().encodeAsByteBuffer(request, allocator: ByteBufferAllocator())

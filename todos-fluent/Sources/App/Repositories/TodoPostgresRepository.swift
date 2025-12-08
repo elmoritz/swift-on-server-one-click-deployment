@@ -1,6 +1,6 @@
+import FluentKit
 import Foundation
 import Hummingbird
-import FluentKit
 
 struct TodoPostgresRepository: Sendable {
     private(set) var db: any Database
@@ -87,7 +87,4 @@ extension TodoPostgresRepository: TodoRepository {
     func deleteAll() async throws {
         try await query().all().delete(on: db)
     }
-
-
 }
-

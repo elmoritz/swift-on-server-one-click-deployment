@@ -5,7 +5,6 @@
 //  Created by Moritz Ellerbrock on 08.12.25.
 //
 
-
 import FluentKit
 import Foundation
 import Hummingbird
@@ -54,7 +53,6 @@ final class TodoModel: Model {
         }
     }
 }
-
 
 extension TodoModel {
     func toDTO() -> Todo? {
