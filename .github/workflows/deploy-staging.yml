@@ -15,6 +15,10 @@ on:
       - ".github/remote-scripts/**"
   workflow_dispatch:
 
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
