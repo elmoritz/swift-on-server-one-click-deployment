@@ -4,21 +4,11 @@ inputs:
   base_url:
     description: 'Base URL of the application to test'
     required: true
-  test_script:
-    description: 'Path to the test script'
-    required: false
-    default: 'tests/api/api-tests.sh'
 
 outputs:
   result:
     description: 'Test result (success/failure)'
     value: ${{ steps.run-tests.outputs.result }}
-  tests_passed:
-    description: 'Number of tests passed'
-    value: ${{ steps.run-tests.outputs.passed }}
-  tests_failed:
-    description: 'Number of tests failed'
-    value: ${{ steps.run-tests.outputs.failed }}
 
 runs:
   using: "composite"
@@ -26,4 +16,6 @@ runs:
     - name: Run API tests
       id: run-tests
       shell: bash
-      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.base_url }}" "${{ inputs.test_script }}"
+      env:
+        API_BASE_URL: ${{ inputs.base_url }}
+      run: chmod +x ${{ github.action_path }}/test-api.swift && ${{ github.action_path }}/test-api.swift
