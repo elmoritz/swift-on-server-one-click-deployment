@@ -1,5 +1,5 @@
 name: 'Health Check'
-description: 'Perform health check on application endpoint'
+description: 'Perform health check and version verification on application endpoint'
 inputs:
   url:
     description: 'Base URL of the application'
@@ -16,6 +16,18 @@ inputs:
     description: 'Health check endpoint path'
     required: false
     default: '/health'
+  expected_version:
+    description: 'Expected version string'
+    required: false
+    default: ''
+  expected_build_number:
+    description: 'Expected build number'
+    required: false
+    default: ''
+  expected_environment:
+    description: 'Expected environment name'
+    required: false
+    default: ''
 
 outputs:
   status:
@@ -30,4 +42,4 @@ runs:
       shell: bash
       run: |
         chmod +x ${{ github.action_path }}/entrypoint.swift
-        ${{ github.action_path }}/entrypoint.swift "${{ inputs.url }}" "${{ inputs.endpoint }}" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}"
+        ${{ github.action_path }}/entrypoint.swift "${{ inputs.url }}" "${{ inputs.endpoint }}" "${{ inputs.max_retries }}" "${{ inputs.retry_interval }}" "${{ inputs.expected_version }}" "${{ inputs.expected_build_number }}" "${{ inputs.expected_environment }}"

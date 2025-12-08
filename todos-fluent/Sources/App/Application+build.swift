@@ -94,18 +94,9 @@ func buildRouter(_ repository: some TodoRepository) -> Router<AppRequestContext>
         // logging middleware
         LogRequestsMiddleware(.info)
     }
-    // Add health endpoint
-    router.get("/health") { _, _ -> HTTPResponse.Status in
-        return .ok
-    }
-    // Add version endpoint
-    router.get("/version") { _, _ -> AppVersionResponse in
-        return AppVersionResponse(
-            version: AppVersion.version,
-            buildNumber: AppVersion.buildNumber,
-            environment: AppVersion.environment
-        )
-    }
+    // Add status endpoints (health and version)
+    router.addRoutes(StatusController(repository: repository).endpoints)
+    // Add todo endpoints
     router.addRoutes(TodoController(repository: repository).endpoints, atPath: "/todos")
     return router
 }

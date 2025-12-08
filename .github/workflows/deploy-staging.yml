@@ -96,6 +96,9 @@ jobs:
           max_retries: "30"
           retry_interval: "3"
           endpoint: ${{ vars.HEALTH_ENDPOINT }}
+          expected_version: ${{ steps.version.outputs.version }}
+          expected_build_number: ${{ steps.build-number.outputs.build-number }}
+          expected_environment: "staging"
 
       - name: Run API tests against staging
         uses: ./.github/actions/api-tests
