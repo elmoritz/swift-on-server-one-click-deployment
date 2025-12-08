@@ -187,6 +187,8 @@ func deployWithCompose(composeFolder: String, deployPath: String) {
     if !pullResult.success {
         print("⚠️  Warning: Failed to pull some images")
         print("output: \(pullResult.output)")
+    } else {
+        print("✅ Images pulled successfully")
     }
 
     // Stop and remove old containers
@@ -197,9 +199,9 @@ func deployWithCompose(composeFolder: String, deployPath: String) {
         print("output: \(stopResult.output)")
     }
 
-    // Start services
+    // Start services with --force-recreate to ensure new image is used
     print("Starting services with Docker Compose...")
-    let upResult = runShell("docker compose up -d")
+    let upResult = runShell("docker compose up -d --force-recreate --pull always")
     if !upResult.success {
         exitWithError("Failed to start services")
         print("output: \(upResult.output)")
