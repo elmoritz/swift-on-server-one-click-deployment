@@ -25,6 +25,8 @@ jobs:
   create-release-version:
     name: Create Release Version
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
@@ -58,35 +60,132 @@ jobs:
           tag_prefix: "v"
           tag_message: "Production release version ${{ inputs.version_type }}"
 
-  pre-deployment-checks:
-    name: Pre-Deployment Validation
+  deploy-staging:
+    name: Deploy to Staging Server
     runs-on: ubuntu-latest
     needs: create-release-version
+    permissions:
+      contents: read
+      packages: write
+    environment:
+      name: staging
+      url: ${{ vars.DEPLOYMENT_URL }}
+    outputs:
+      build-number: ${{ steps.build-number.outputs.build-number }}
+      previous-version: ${{ steps.check-current.outputs.version }}
+
+    steps:
+      - name: Check current staging version
+        id: check-current
+        continue-on-error: true
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ vars.DEPLOYMENT_URL }}
+          max_retries: "3"
+          retry_interval: "2"
+          endpoint: ${{ vars.HEALTH_ENDPOINT }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: releases/staging/${{ needs.create-release-version.outputs.version }}
+          fetch-depth: 0
+
+      - name: Calculate build number
+        id: build-number
+        uses: ./.github/actions/calculate-build-number
+
+      - name: Set version in app code
+        uses: ./.github/actions/set-app-version
+        with:
+          version: ${{ needs.create-release-version.outputs.version }}
+          build-number: ${{ steps.build-number.outputs.build-number }}
+          environment: "staging"
+
+      - name: Build Docker image
+        id: docker-build
+        uses: ./.github/actions/docker-build
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          version: ${{ needs.create-release-version.outputs.version }}-${{ steps.build-number.outputs.build-number }}
+          tags: "latest"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        id: docker-push
+        uses: ./.github/actions/docker-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.docker-build.outputs.tags }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to staging server
+        uses: ./.github/actions/deploy-server
+        with:
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_key: ${{ secrets.SSH_KEY }}
+          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+          ssh_port: ${{ secrets.SSH_PORT || 22 }}
+          registry: ${{ env.REGISTRY }}
+          image_name: ${{ env.IMAGE_NAME }}
+          version: "latest"
+          container_name: "container-todos-staging"
+          port: "10000:8080"
+          compose_folder: ${{ vars.COMPOSE_FOLDER }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Health check
+        uses: ./.github/actions/health-check
+        with:
+          url: ${{ vars.DEPLOYMENT_URL }}
+          max_retries: "30"
+          retry_interval: "3"
+          endpoint: ${{ vars.HEALTH_ENDPOINT }}
+          expected_version: ${{ needs.create-release-version.outputs.version }}
+          expected_build_number: ${{ steps.build-number.outputs.build-number }}
+          expected_environment: "staging"
+
+      - name: Run API tests against staging
+        uses: ./.github/actions/api-tests
+        with:
+          base_url: ${{ vars.DEPLOYMENT_URL }}
+
+      - name: Staging deployment notification
+        if: success()
+        uses: ./.github/actions/deployment-notification
+        with:
+          status: "success"
+          environment: "staging"
+          version: ${{ needs.create-release-version.outputs.version }}
+          version_type: ${{ inputs.version_type }}
+          url: ${{ vars.DEPLOYMENT_URL }}
+
+  pre-deployment-checks:
+    name: Monitor Staging Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-staging
     environment:
       name: staging
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main
 
-      - name: Validate staging health
-        uses: ./.github/actions/health-check
+      - name: Monitor for 5 minutes
+        uses: ./.github/actions/extended-monitoring
         with:
           url: ${{ vars.DEPLOYMENT_URL }}
-          max_retries: "10"
-          retry_interval: "2"
+          duration_minutes: "5"
+          check_interval_seconds: "30"
+          max_consecutive_failures: "3"
           endpoint: ${{ vars.HEALTH_ENDPOINT }}
-
-      - name: Run final tests on staging
-        uses: ./.github/actions/api-tests
-        with:
-          base_url: ${{ vars.DEPLOYMENT_URL }}
 
   deploy-production:
     name: Deploy to Production Server
     runs-on: ubuntu-latest
-    needs: [create-release-version, pre-deployment-checks]
+    needs: [create-release-version, deploy-staging, pre-deployment-checks]
     permissions:
       contents: read
       packages: write
@@ -97,7 +196,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ needs.create-release-version.outputs.version }}
+          ref: releases/production/${{ needs.create-release-version.outputs.version }}
           fetch-depth: 0
 
       - name: Calculate build number
@@ -263,6 +362,8 @@ jobs:
   create-release-branch:
     name: Create Release Branch
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: [create-release-version, post-deployment-monitoring]
     if: success()
 
