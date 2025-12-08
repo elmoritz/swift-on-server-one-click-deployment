@@ -73,8 +73,18 @@ jobs:
     outputs:
       build-number: ${{ steps.build-number.outputs.build-number }}
       previous-version: ${{ steps.check-current.outputs.version }}
+    env:
+      STAGING_IMAGE_NAME: ${{ github.repository }}-staging
 
     steps:
+      - name: Confirm correct imageName
+        env:
+          ENVIRONMENT_IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          VARIABLES_IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+        run: |
+          echo "Using env image name: $ENVIRONMENT_IMAGE_NAME"
+          echo "Using vars image name: $VARIABLES_IMAGE_NAME"
+
       - name: Check current staging version
         id: check-current
         continue-on-error: true
@@ -107,7 +117,7 @@ jobs:
         uses: ./.github/actions/docker-build
         with:
           registry: ${{ env.REGISTRY }}
-          image_name: ${{ env.IMAGE_NAME }}
+          image_name: ${{ env.STAGING_IMAGE_NAME }}
           version: ${{ needs.create-release-version.outputs.version }}-${{ steps.build-number.outputs.build-number }}
           tags: "latest"
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -117,7 +127,7 @@ jobs:
         uses: ./.github/actions/docker-push
         with:
           registry: ${{ env.REGISTRY }}
-          image_name: ${{ env.IMAGE_NAME }}
+          image_name: ${{ env.STAGING_IMAGE_NAME }}
           tags: ${{ steps.docker-build.outputs.tags }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -130,7 +140,7 @@ jobs:
           # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
           ssh_port: ${{ secrets.SSH_PORT || 22 }}
           registry: ${{ env.REGISTRY }}
-          image_name: ${{ env.IMAGE_NAME }}
+          image_name: ${{ env.STAGING_IMAGE_NAME }}
           version: "latest"
           container_name: "container-todos-staging"
           port: "10000:8080"
