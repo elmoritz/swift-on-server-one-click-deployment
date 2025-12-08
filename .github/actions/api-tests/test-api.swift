@@ -1,5 +1,8 @@
 #!/usr/bin/env swift
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 // MARK: - Configuration
 guard let baseURL = ProcessInfo.processInfo.environment["API_BASE_URL"] else {
