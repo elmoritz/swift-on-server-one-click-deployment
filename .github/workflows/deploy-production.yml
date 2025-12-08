@@ -37,9 +37,9 @@ jobs:
       - name: Configure Git
         uses: ./.github/actions/git-config
 
-      - name: Bump version (3-part for production)
+      - name: Calculate next version (3-part for production)
         id: bump
-        uses: ./.github/actions/version-increment
+        uses: ./.github/actions/calculate-next-version
         with:
           version_type: ${{ inputs.version_type }}
 

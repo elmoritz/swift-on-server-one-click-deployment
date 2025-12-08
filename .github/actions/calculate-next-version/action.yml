@@ -1,5 +1,5 @@
-name: 'Increment Version'
-description: 'Increment semantic version based on git tags (build, patch, minor, major)'
+name: 'Calculate Next Version'
+description: 'Calculate next semantic version based on git tags and version type (build, patch, minor, major)'
 inputs:
   version_type:
     description: 'Type of version increment (build, patch, minor, major)'
