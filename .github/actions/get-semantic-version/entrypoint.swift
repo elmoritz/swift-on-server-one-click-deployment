@@ -51,8 +51,8 @@ func shellOutput(_ command: String) -> String {
 // MARK: - Main Logic
 log("Looking for semantic version tags (MAJOR.MINOR.PATCH format)")
 
-// Get the latest semantic version tag (MAJOR.MINOR.PATCH format)
-let tag = shellOutput("git tag --sort=-creatordate | grep -E '^[0-9]+\\.[0-9]+\\.[0-9]+$' | head -n1 || true")
+// Get the latest semantic version tag (MAJOR.MINOR.PATCH format, with or without 'v' prefix)
+let tag = shellOutput("git tag --sort=-creatordate | grep -E '^v?[0-9]+\\.[0-9]+\\.[0-9]+$' | head -n1 || true")
     .trimmingCharacters(in: .whitespacesAndNewlines)
 
 let version: String
@@ -60,8 +60,9 @@ if tag.isEmpty {
     version = "0.1.0"
     log("⚠️  No semantic version tag found, using default: \(version)")
 } else {
-    version = tag
-    log("✅ Found semantic version: \(version)")
+    // Remove 'v' prefix if present
+    version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+    log("✅ Found semantic version tag: \(tag) -> \(version)")
 }
 
 // MARK: - Write Version to Output
