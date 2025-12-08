@@ -26,12 +26,11 @@ COPY todos-fluent/Tests ./Tests
 # Build the application (benefits from cached dependencies)
 RUN swift build -c release --static-swift-stdlib
 
-# Stage 2: Runtime
+# Stage 3: Runtime
 FROM ubuntu:22.04
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libsqlite3-0 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,8 +42,8 @@ WORKDIR /app
 # Copy the built executable from builder stage
 COPY --from=builder /app/.build/release/App /app/todos-server
 
-# Create directory for database
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
+# Change ownership
+RUN chown -R appuser:appuser /app
 
 USER appuser
 
@@ -52,7 +51,10 @@ USER appuser
 EXPOSE 8080
 
 # Environment variables with defaults
-ENV DB_PATH=/app/data/db.sqlite
+ENV POSTGRES_HOST=postgres
+ENV POSTGRES_USER=todos
+ENV POSTGRES_PASSWORD=todos
+ENV POSTGRES_DB=hummingbird
 
-# Run migrations and start server
-CMD ["/app/todos-server", "--hostname", "0.0.0.0", "-p", "8080"]
+# Run server
+CMD ["/app/todos-server", "--hostname", "0.0.0.0", "--port", "8080"]

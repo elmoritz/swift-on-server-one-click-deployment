@@ -3,10 +3,13 @@ description: "Update the hardcoded version in the application code"
 
 inputs:
   version:
-    description: "Version to set in the app code"
+    description: "Semantic version to set (e.g., 1.0.0)"
+    required: true
+  build-number:
+    description: "Build number to set (e.g., 42)"
     required: true
   environment:
-    description: "Environment (staging or production)"
+    description: "Environment (development, staging, or production)"
     required: true
     default: "staging"
 
@@ -15,4 +18,4 @@ runs:
   steps:
     - name: Set version in app code
       shell: bash
-      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.version }}" "${{ inputs.environment }}"
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift "${{ inputs.version }}" "${{ inputs.build-number }}" "${{ inputs.environment }}"

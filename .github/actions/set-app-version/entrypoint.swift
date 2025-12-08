@@ -14,41 +14,51 @@ func exitWithError(_ message: String) -> Never {
 }
 
 // MARK: - Main Logic
-guard CommandLine.arguments.count == 3 else {
-    exitWithError("Usage: \(CommandLine.arguments[0]) <version> <environment>")
+guard CommandLine.arguments.count == 4 else {
+    exitWithError("Usage: \(CommandLine.arguments[0]) <version> <build-number> <environment>")
 }
 
 let version = CommandLine.arguments[1]
-let environment = CommandLine.arguments[2]
+let buildNumber = CommandLine.arguments[2]
+let environment = CommandLine.arguments[3]
 
-let appVersionPath = "todos-fluent/Sources/App/AppVersion.swift"
+let appVersionPath = "todos-fluent/Sources/App/Models/AppVersion.swift"
 
-log("Setting version to \(version) for environment \(environment)")
-
-// Get current date in ISO8601 format
-let dateFormatter = ISO8601DateFormatter()
-let buildDate = dateFormatter.string(from: Date())
+log("Setting version to \(version), build number \(buildNumber) for environment \(environment)")
 
 // Create new AppVersion.swift content
 let newContent = """
 // AppVersion.swift
 // This file contains hardcoded version information
-// It is automatically generated during the build process
+// It is automatically modified during the CI/CD build process
 
+import Hummingbird
+
+/// Application version information
 enum AppVersion {
     // MARK: - Version Information
     // These values are set by the CI/CD pipeline during build
 
-    /// Current application version
-    /// Format: MAJOR.MINOR.PATCH.BUILD for staging (e.g., 0.1.0.42)
-    /// Format: MAJOR.MINOR.PATCH for production (e.g., 1.2.3)
-    static let current = "\(version)"
+    /// Semantic version from git tags (e.g., "1.0.0")
+    static let version = "\(version)"
 
-    /// Build date in ISO8601 format
-    static let buildDate = "\(buildDate)"
+    /// Build number from commit count to main branch (e.g., "42")
+    static let buildNumber = "\(buildNumber)"
 
-    /// Environment (staging or production)
+    /// Environment (development, staging, or production)
     static let environment = "\(environment)"
+}
+
+/// Response structure for version endpoint
+struct AppVersionResponse: ResponseCodable {
+    /// Semantic version from git tags
+    let version: String
+
+    /// Build number from commit count
+    let buildNumber: String
+
+    /// Environment (development, staging, or production)
+    let environment: String
 }
 """
 
@@ -56,7 +66,7 @@ do {
     try newContent.write(toFile: appVersionPath, atomically: true, encoding: .utf8)
     log("✅ Version updated successfully")
     log("   Version: \(version)")
-    log("   Build date: \(buildDate)")
+    log("   Build number: \(buildNumber)")
     log("   Environment: \(environment)")
 } catch {
     exitWithError("Failed to write AppVersion.swift: \(error)")

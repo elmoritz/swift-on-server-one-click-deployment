@@ -1,0 +1,15 @@
+name: "Calculate Build Number"
+description: "Calculate build number from commit count to main branch"
+
+outputs:
+  build-number:
+    description: "Build number based on commit count to main"
+    value: ${{ steps.build-number.outputs.number }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Calculate build number
+      id: build-number
+      shell: bash
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift

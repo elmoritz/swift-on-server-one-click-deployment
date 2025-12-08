@@ -1,6 +1,7 @@
 import Hummingbird
 import Logging
-import PostgresNIO
+import FluentPostgresDriver
+import HummingbirdFluent
 
 /// Application arguments protocol. We use a protocol so we can call
 /// `buildApplication` inside Tests as well as in the App executable.
@@ -13,6 +14,11 @@ public protocol AppArguments {
     var inMemoryTesting: Bool { get }
 }
 
+enum StartUpError: Error {
+    case databaseCouldNotBeCreated
+}
+
+
 // Request context used by application
 typealias AppRequestContext = BasicRequestContext
 
@@ -24,19 +30,27 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
         var logger = Logger(label: "todos-postgres-tutorial")
         logger.logLevel =
             arguments.logLevel ??
-            environment.get("LOG_LEVEL").map { Logger.Level(rawValue: $0) ?? .info } ??
-            .info
+            environment.get("LOG_LEVEL").map { Logger.Level(rawValue: $0) ?? .info } ?? .info
         return logger
     }()
-    var postgresRepository: TodoPostgresRepository?
+
+    var fluent: Fluent?
     let router: Router<AppRequestContext>
     if !arguments.inMemoryTesting {
-        let client = PostgresClient(
-            configuration: .init(host: "localhost", username: "todos", password: "todos", database: "hummingbird", tls: .disable),
-            backgroundLogger: logger
+        let fluentNonOptional = Fluent(logger: logger)
+        let postgresConfig: DatabaseConfigurationFactory = .postgres(
+            configuration: getPostgresConfig(arguments: arguments)
         )
-        let repository = TodoPostgresRepository(client: client, logger: logger)
-        postgresRepository = repository
+        fluentNonOptional.databases.use(postgresConfig, as: .psql)
+
+        guard let db = fluentNonOptional.databases.database(logger: logger, on: fluentNonOptional.eventLoopGroup.any()) else {
+            throw StartUpError.databaseCouldNotBeCreated
+        }
+
+        await fluentNonOptional.migrations.add(CreateTodoModel())
+
+        fluent = fluentNonOptional
+        let repository = TodoPostgresRepository(db: db)
         router = buildRouter(repository)
     } else {
         router = buildRouter(TodoMemoryRepository())
@@ -51,13 +65,25 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
     )
     // if we setup a postgres service then add as a service and run createTable before
     // server starts
-    if let postgresRepository {
-        app.addServices(postgresRepository.client)
+    if let fluent {
+        app.addServices(fluent)
         app.beforeServerStarts {
-            try await postgresRepository.createTable()
+            try await fluent.migrate()
         }
     }
     return app
+}
+
+func getPostgresConfig(arguments: some AppArguments) -> SQLPostgresConfiguration {
+    let environment = Environment()
+    return .init(
+        hostname: environment.get("POSTGRES_HOST") ?? "localhost",
+        port: Int(environment.get("POSTGRES_PORT") ?? "5432") ?? 5432,
+        username: environment.get("POSTGRES_USER") ?? "postgres",
+        password: environment.get("POSTGRES_PASSWORD") ?? "TopSecretPassword",
+        database: environment.get("POSTGRES_DB") ?? "postgres",
+        tls: .disable
+    )
 }
 
 /// Build router
@@ -71,6 +97,14 @@ func buildRouter(_ repository: some TodoRepository) -> Router<AppRequestContext>
     // Add health endpoint
     router.get("/health") { _, _ -> HTTPResponse.Status in
         return .ok
+    }
+    // Add version endpoint
+    router.get("/version") { _, _ -> AppVersionResponse in
+        return AppVersionResponse(
+            version: AppVersion.version,
+            buildNumber: AppVersion.buildNumber,
+            environment: AppVersion.environment
+        )
     }
     router.addRoutes(TodoController(repository: repository).endpoints, atPath: "/todos")
     return router

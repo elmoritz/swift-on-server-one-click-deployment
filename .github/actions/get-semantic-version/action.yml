@@ -1,0 +1,15 @@
+name: "Get Semantic Version"
+description: "Get semantic version from git tags (MAJOR.MINOR.PATCH format)"
+
+outputs:
+  version:
+    description: "Semantic version from git tags (e.g., 1.0.0)"
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get semantic version from git tags
+      id: version
+      shell: bash
+      run: chmod +x ${{ github.action_path }}/entrypoint.swift && ${{ github.action_path }}/entrypoint.swift

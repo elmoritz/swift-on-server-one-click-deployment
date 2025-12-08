@@ -39,6 +39,7 @@ actor TodoMemoryRepository: TodoRepository {
             if let completed {
                 todo.completed = completed
             }
+
             self.todos[id] = todo
             return todo
         }
