@@ -50,8 +50,8 @@ struct HTTPRequest {
 
 enum Expectation {
     case status(Int)
-    case jsonKey(String, equals: String)
-    case jsonKey(String, exists: Bool)
+    case jsonKeyEquals(String, equals: String)
+    case jsonKeyExists(String, exists: Bool)
     case jsonArray
     case bodyContains(String)
 }
@@ -75,13 +75,13 @@ struct APITestBuilder {
 
     func expect(jsonKey: String, equals value: String) -> APITestBuilder {
         var copy = self
-        copy.expectations.append(.jsonKey(jsonKey, equals: value))
+        copy.expectations.append(.jsonKeyEquals(jsonKey, equals: value))
         return copy
     }
 
     func expect(jsonKey: String, exists: Bool) -> APITestBuilder {
         var copy = self
-        copy.expectations.append(.jsonKey(jsonKey, exists: exists))
+        copy.expectations.append(.jsonKeyExists(jsonKey, exists: exists))
         return copy
     }
 
@@ -107,9 +107,14 @@ struct APITestBuilder {
 // MARK: - Test Execution
 
 class TestRunner {
-    var passedTests = 0
-    var failedTests = 0
-    var createdTodoId: String?
+    let baseURL: String
+    private var passedTests = 0
+    private var failedTests = 0
+    private var createdTodoId: String?
+
+    init(baseURL: String) {
+        self.baseURL = baseURL
+    }
 
     func run(_ tests: [APITest]) async -> Bool {
         print("=========================================")
@@ -227,7 +232,7 @@ class TestRunner {
                 return false
             }
 
-        case .jsonKey(let key, equals: let expected):
+        case let .jsonKeyEquals(key, expected):
             if let value = json?[key] as? String, value == expected {
                 print("   ✓ JSON[\(key)] = \"\(value)\"")
                 return true
@@ -239,7 +244,7 @@ class TestRunner {
                 return false
             }
 
-        case .jsonKey(let key, exists: let shouldExist):
+        case let .jsonKeyExists(key, shouldExist):
             let exists = json?[key] != nil
             if exists == shouldExist {
                 print("   ✓ JSON[\(key)] exists: \(exists)")
@@ -258,7 +263,7 @@ class TestRunner {
                 return false
             }
 
-        case .bodyContains(let text):
+        case let .bodyContains(text):
             if body.contains(text) {
                 print("   ✓ Body contains: \"\(text)\"")
                 return true
@@ -352,7 +357,7 @@ let tests: [APITest] = [
 // MARK: - Main Execution
 
 Task {
-    let runner = TestRunner()
+    let runner = TestRunner(baseURL: baseURL)
     let success = await runner.run(tests)
 
     exit(success ? 0 : 1)
