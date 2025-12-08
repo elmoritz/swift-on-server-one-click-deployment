@@ -52,7 +52,21 @@ func shellOutput(_ command: String) -> String {
 log("Calculating build number from commit count to main branch")
 
 // Get the number of commits to the main branch
-let buildNumberString = shellOutput("git rev-list --count main")
+// Try origin/main first (available in CI), fallback to main, then HEAD
+func determineBranchRef() -> String {
+    if !shellOutput("git rev-parse --verify origin/main 2>/dev/null").isEmpty {
+        return "origin/main"
+    } else if !shellOutput("git rev-parse --verify main 2>/dev/null").isEmpty {
+        return "main"
+    } else {
+        return "HEAD"
+    }
+}
+
+let branchRef = determineBranchRef()
+log("Using branch reference: \(branchRef)")
+
+let buildNumberString = shellOutput("git rev-list --count \(branchRef)")
     .trimmingCharacters(in: .whitespacesAndNewlines)
 
 guard let buildNumber = Int(buildNumberString), buildNumber > 0 else {

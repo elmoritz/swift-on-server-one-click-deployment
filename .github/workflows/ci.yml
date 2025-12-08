@@ -80,8 +80,7 @@ jobs:
         if: success()
         working-directory: todos-fluent
         run: |
-          swift test --enable-code-coverage
-          xcrun llvm-cov export -format="lcov" \
+          llvm-cov export -format="lcov" \
             .build/debug/AppPackageTests.xctest \
             -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
 
