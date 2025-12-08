@@ -45,13 +45,6 @@ jobs:
         with:
           version_type: ${{ inputs.version_type }}
 
-      - name: Create release branches
-        uses: ./.github/actions/create-release-branch
-        with:
-          version: ${{ steps.bump.outputs.version }}
-          create_staging_branch: "true"
-          create_production_branch: "true"
-
       - name: Create and push production tag
         uses: ./.github/actions/git-tag-push
         with:
@@ -74,16 +67,14 @@ jobs:
       build-number: ${{ steps.build-number.outputs.build-number }}
       previous-version: ${{ steps.check-current.outputs.version }}
     env:
-      STAGING_IMAGE_NAME: ${{ github.repository }}-staging
+      STAGING_IMAGE_NAME: ${{ github.repository }}-staging # this is a workaround for githubs inability to use multiple Environments
 
     steps:
-      - name: Confirm correct imageName
-        env:
-          ENVIRONMENT_IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          VARIABLES_IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-        run: |
-          echo "Using env image name: $ENVIRONMENT_IMAGE_NAME"
-          echo "Using vars image name: $VARIABLES_IMAGE_NAME"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Check current staging version
         id: check-current
@@ -94,12 +85,6 @@ jobs:
           max_retries: "3"
           retry_interval: "2"
           endpoint: ${{ vars.HEALTH_ENDPOINT }}
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: releases/staging/${{ needs.create-release-version.outputs.version }}
-          fetch-depth: 0
 
       - name: Calculate build number
         id: build-number
@@ -197,7 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create-release-version, deploy-staging, pre-deployment-checks]
     permissions:
-      contents: read
+      contents: write
       packages: write
     environment:
       name: production
@@ -206,7 +191,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: releases/production/${{ needs.create-release-version.outputs.version }}
+          ref: main
           fetch-depth: 0
 
       - name: Calculate build number
@@ -401,3 +386,35 @@ jobs:
 
           echo "✅ Created release branch: ${BRANCH_NAME}"
           echo "This branch represents the successfully deployed version v${VERSION}"
+
+  cleanup-on-failure:
+    name: Cleanup Failed Deployment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [create-release-version, deploy-staging, deploy-production, post-deployment-monitoring]
+    if: failure()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        uses: ./.github/actions/git-config
+
+      - name: Delete tag on failure
+        run: |
+          VERSION="${{ needs.create-release-version.outputs.version }}"
+          TAG_NAME="v${VERSION}"
+
+          # Check if tag exists
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
+            echo "⚠️ Deployment failed - deleting tag ${TAG_NAME}"
+            git push --delete origin "${TAG_NAME}" || echo "Tag already deleted or doesn't exist"
+            echo "✅ Tag ${TAG_NAME} has been removed"
+          else
+            echo "ℹ️ Tag ${TAG_NAME} does not exist, nothing to clean up"
+          fi
