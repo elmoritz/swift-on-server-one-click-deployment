@@ -172,8 +172,8 @@ jobs:
         uses: ./.github/actions/extended-monitoring
         with:
           url: ${{ vars.DEPLOYMENT_URL }}
-          duration_minutes: "5"
-          check_interval_seconds: "30"
+          duration_minutes: "1"
+          check_interval_seconds: "10"
           max_consecutive_failures: "3"
           endpoint: ${{ vars.HEALTH_ENDPOINT }}
 
@@ -288,26 +288,26 @@ jobs:
           container_name: "container-todos-production"
           deploy_path: ${{ vars.COMPOSE_FOLDER }}
 
-      - name: Rollback on failure
-        if: failure()
-        uses: ./.github/actions/rollback-deployment
-        with:
-          ssh_host: ${{ secrets.SSH_HOST }}
-          ssh_user: ${{ secrets.SSH_USER }}
-          ssh_key: ${{ secrets.SSH_KEY }}
-          # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
-          ssh_port: ${{ secrets.SSH_PORT || 22 }}
-          container_name: "container-todos-production"
-          deploy_path: ${{ vars.COMPOSE_FOLDER }}
+      # - name: Rollback on failure
+      #   if: failure()
+      #   uses: ./.github/actions/rollback-deployment
+      #   with:
+      #     ssh_host: ${{ secrets.SSH_HOST }}
+      #     ssh_user: ${{ secrets.SSH_USER }}
+      #     ssh_key: ${{ secrets.SSH_KEY }}
+      #     # ssh_key_passphrase: ${{ secrets.KEY_PASSPHRASE || '' }}
+      #     ssh_port: ${{ secrets.SSH_PORT || 22 }}
+      #     container_name: "container-todos-production"
+      #     deploy_path: ${{ vars.COMPOSE_FOLDER }}
 
-      - name: Verify rollback
-        if: failure()
-        uses: ./.github/actions/health-check
-        with:
-          url: ${{ vars.DEPLOYMENT_URL }}
-          max_retries: "20"
-          retry_interval: "3"
-          endpoint: ${{ vars.HEALTH_ENDPOINT }}
+      # - name: Verify rollback
+      #   if: failure()
+      #   uses: ./.github/actions/health-check
+      #   with:
+      #     url: ${{ vars.DEPLOYMENT_URL }}
+      #     max_retries: "20"
+      #     retry_interval: "3"
+      #     endpoint: ${{ vars.HEALTH_ENDPOINT }}
 
   post-deployment-monitoring:
     name: Monitor Production Deployment

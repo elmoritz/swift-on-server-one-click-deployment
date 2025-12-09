@@ -56,6 +56,9 @@ runs:
         port: ${{ inputs.ssh_port }}
         envs: CONTAINER_NAME,PRUNE_IMAGES,DEPLOY_PATH
         script: |
+          # Source Swiftly environment
+          source ~/.local/share/swiftly/env.sh
+
           # Make script executable
           chmod +x ~/server-manager.swift
 
