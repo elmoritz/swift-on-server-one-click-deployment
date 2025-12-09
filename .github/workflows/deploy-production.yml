@@ -168,7 +168,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Monitor for 5 minutes
+      - name: Monitor for 1 minutes
         uses: ./.github/actions/extended-monitoring
         with:
           url: ${{ vars.DEPLOYMENT_URL }}
@@ -321,12 +321,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extended monitoring (15 minutes)
+      - name: Extended monitoring (5 minutes)
         uses: ./.github/actions/extended-monitoring
         with:
           url: ${{ vars.DEPLOYMENT_URL }}
-          duration_minutes: "15"
-          check_interval_seconds: "30"
+          duration_minutes: "5"
+          check_interval_seconds: "10"
           max_consecutive_failures: "3"
           endpoint: ${{ vars.HEALTH_ENDPOINT }}
 
@@ -392,7 +392,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [create-release-version, deploy-staging, deploy-production, post-deployment-monitoring]
+    needs:
+      [
+        create-release-version,
+        deploy-staging,
+        deploy-production,
+        post-deployment-monitoring,
+      ]
     if: failure()
 
     steps:
