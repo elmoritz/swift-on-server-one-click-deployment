@@ -59,6 +59,10 @@ runs:
       with:
         context: .
         push: false
+        # Always resolve the latest base images and rebuild the runtime stage
+        # uncached so OS security patches are never served from stale cache.
+        pull: true
+        no-cache-filters: runtime
         tags: ${{ steps.prepare-tags.outputs.tags }}
         build-args: |
           VERSION=${{ inputs.version }}

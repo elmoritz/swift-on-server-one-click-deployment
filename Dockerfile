@@ -27,11 +27,15 @@ COPY todos-fluent/Tests ./Tests
 RUN swift build -c release --static-swift-stdlib
 
 # Stage 3: Runtime
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS runtime
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
+# Apply pending security updates and install runtime dependencies.
+# This stage is excluded from the build cache (see no-cache-filters in
+# .github/actions/docker-build) so every build picks up current patches.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
