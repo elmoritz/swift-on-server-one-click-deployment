@@ -65,7 +65,8 @@ let defaultVersion: String
 
 if isProductionRelease {
     // Production: 3-part version (MAJOR.MINOR.PATCH)
-    tagPattern = "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    // Production tags are pushed with a "v" prefix (e.g. v1.2.3)
+    tagPattern = "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
     defaultVersion = "0.1.0"
     log("Looking for 3-part production version tags")
 } else {
@@ -75,8 +76,11 @@ if isProductionRelease {
     log("Looking for 4-part staging version tags")
 }
 
-let tag = shellOutput("git tag --sort=-creatordate | grep -E '" + tagPattern + "' | head -n1 || true")
+var tag = shellOutput("git tag --sort=-creatordate | grep -E '" + tagPattern + "' | head -n1 || true")
     .trimmingCharacters(in: .whitespacesAndNewlines)
+if tag.hasPrefix("v") {
+    tag.removeFirst()
+}
 
 let currentVersion = tag.isEmpty ? defaultVersion : tag
 log("Current version found: \(currentVersion)")
